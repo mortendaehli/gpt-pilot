@@ -11,7 +11,7 @@ from pilot.helpers.AgentConvo import AgentConvo
 from pilot.helpers.agents.Architect import Architect
 from pilot.helpers.agents.TechLead import TechLead
 from pilot.helpers.Project import Project
-from pilot.main import get_custom_print
+from pilot.utils.custom_print import get_custom_print
 from pilot.utils.function_calling import FunctionType, parse_agent_response
 from pilot.utils.llm_connection import (
     assert_json_response,

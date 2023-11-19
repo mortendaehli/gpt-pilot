@@ -9,11 +9,11 @@ from dotenv import load_dotenv
 
 from pilot.helpers.AgentConvo import AgentConvo
 from pilot.helpers.agents import ENVIRONMENT_SETUP_STEP, Developer
+from pilot.utils.custom_print import get_custom_print
 from tests.mock_questionary import MockQuestionary
 
 load_dotenv()
 
-from pilot.main import get_custom_print
 from tests.helpers.test_Project import create_project
 
 

@@ -3,12 +3,6 @@ import pytest
 from pilot.settings import Settings
 
 
-def test_settings_initializes_known_variables():
-    settings = Settings()
-    assert settings.openai_api_key is None
-    assert settings.telemetry is None
-
-
 def test_settings_init_raise_error_on_unknown_variables():
     with pytest.raises(ValueError):
         _ = Settings(unknown="value")

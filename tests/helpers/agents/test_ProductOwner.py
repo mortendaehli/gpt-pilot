@@ -5,7 +5,7 @@ import pytest
 from dotenv import load_dotenv
 
 from pilot.helpers.agents.ProductOwner import ProductOwner
-from pilot.main import get_custom_print
+from pilot.utils.custom_print import get_custom_print
 from tests.helpers.test_Project import create_project
 
 load_dotenv()

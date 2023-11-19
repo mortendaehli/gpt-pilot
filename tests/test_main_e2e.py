@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from dotenv import load_dotenv
 
-from pilot.main import init
+from pilot.app import init
 from pilot.utils.custom_print import get_custom_print
 from tests.mock_questionary import MockQuestionary
 

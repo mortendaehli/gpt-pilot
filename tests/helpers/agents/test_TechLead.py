@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 from dotenv import load_dotenv
 
+from pilot.utils.custom_print import get_custom_print
 from tests.mock_questionary import MockQuestionary
 from tests.test_utils import assert_non_empty_string
 
@@ -12,7 +13,6 @@ load_dotenv()
 
 from pilot.helpers.agents.TechLead import DEVELOPMENT_PLANNING_STEP, TechLead
 from pilot.helpers.Project import Project
-from pilot.main import get_custom_print
 
 
 class TestTechLead:
