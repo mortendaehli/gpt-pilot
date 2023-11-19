@@ -1,11 +1,23 @@
 [tool.poetry]
 name = "gpt-pilot"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "Fork from https://github.com/Pythagora-io/gpt-pilot"
 license = "MIT"
 readme = "README.md"
 packages = [{include = "pilot"}]
+classifiers=[
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: MIT License",
+  "Natural Language :: English",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"
