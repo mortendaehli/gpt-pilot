@@ -1,5 +1,4 @@
-// noinspection SyntaxError
-
+// noinspection SyntaxError,Annotator,JSHint
 let messages = {{messages}}
 
 function sleep(ms) {
