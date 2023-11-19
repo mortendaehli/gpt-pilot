@@ -60,11 +60,11 @@ def test_settings_to_dict():
 
 def test_loader_config_file_location(expected_config_location):
     settings = Settings()
-    assert Loader(settings).config_path == expected_config_location
+    assert Loader(settings).config_path.as_posix() == expected_config_location
 
 
-@patch("utils.settings.open")
-@patch("utils.settings.Loader.update_settings_from_env")
+@patch("pilot.utils.settings.open")
+@patch("pilot.utils.settings.Loader.update_settings_from_env")
 def test_loader_load_config_file(_mock_from_env, mock_open, expected_config_location):
     settings = Settings()
     fake_config = json.dumps(
@@ -92,8 +92,8 @@ def test_loader_load_config_file(_mock_from_env, mock_open, expected_config_loca
     assert settings.telemetry["endpoint"] == "https://example.com"
 
 
-@patch("utils.settings.open")
-@patch("utils.settings.Loader.update_settings_from_env")
+@patch("pilot.utils.settings.open")
+@patch("pilot.utils.settings.Loader.update_settings_from_env")
 def test_loader_load_no_config_file(_mock_from_env, mock_open, expected_config_location):
     settings = Settings()
     loader = Loader(settings)
@@ -110,7 +110,7 @@ def test_loader_load_no_config_file(_mock_from_env, mock_open, expected_config_l
     assert settings.telemetry is None
 
 
-@patch("utils.settings.getenv")
+@patch("pilot.utils.settings.getenv")
 def test_loader_load_from_env(mock_getenv):
     settings = Settings()
     mock_getenv.side_effect = lambda key: {

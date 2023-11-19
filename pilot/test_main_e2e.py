@@ -8,7 +8,7 @@ load_dotenv()
 
 from pilot.database.database import create_tables
 from pilot.helpers.Project import Project
-from pilot.test.mock_questionary import MockQuestionary
+from pilot.tests.mock_questionary import MockQuestionary
 
 from .main import get_custom_print, init
 

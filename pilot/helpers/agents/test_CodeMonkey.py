@@ -10,7 +10,7 @@ from pilot.database.models.development_steps import DevelopmentSteps
 from pilot.database.models.files import File
 from pilot.helpers.AgentConvo import AgentConvo
 from pilot.helpers.Project import Project, clear_directory, update_file
-from pilot.test.test_utils import mock_terminal_size
+from pilot.tests.test_utils import mock_terminal_size
 
 from .CodeMonkey import CodeMonkey
 from .Developer import Developer

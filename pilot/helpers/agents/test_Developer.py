@@ -13,7 +13,7 @@ load_dotenv()
 
 from pilot.helpers.test_Project import create_project
 from pilot.main import get_custom_print
-from pilot.test.mock_questionary import MockQuestionary
+from pilot.tests.mock_questionary import MockQuestionary
 
 from .Developer import ENVIRONMENT_SETUP_STEP, Developer
 

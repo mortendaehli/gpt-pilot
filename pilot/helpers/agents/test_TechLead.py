@@ -10,8 +10,8 @@ load_dotenv()
 from pilot.helpers.agents.TechLead import DEVELOPMENT_PLANNING_STEP, TechLead
 from pilot.helpers.Project import Project
 from pilot.main import get_custom_print
-from pilot.test.mock_questionary import MockQuestionary
-from pilot.test.test_utils import assert_non_empty_string
+from pilot.tests.mock_questionary import MockQuestionary
+from pilot.tests.test_utils import assert_non_empty_string
 
 
 class TestTechLead:

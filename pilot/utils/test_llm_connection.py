@@ -12,8 +12,8 @@ from pilot.helpers.agents.Architect import Architect
 from pilot.helpers.agents.TechLead import TechLead
 from pilot.helpers.Project import Project
 from pilot.main import get_custom_print
-from pilot.test.mock_questionary import MockQuestionary
-from pilot.test.test_utils import assert_non_empty_string
+from pilot.tests.mock_questionary import MockQuestionary
+from pilot.tests.test_utils import assert_non_empty_string
 from pilot.utils.function_calling import FunctionType, parse_agent_response
 from pilot.utils.llm_connection import (
     assert_json_response,
