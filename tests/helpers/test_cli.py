@@ -1,23 +1,23 @@
-import platform
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from pilot.helpers.cli import execute_command, run_command_until_success, terminate_process
-from pilot.helpers.test_Project import create_project
+from tests.helpers.test_Project import create_project
 
 
-@patch("helpers.cli.os")
-@patch("helpers.cli.subprocess")
+@patch("pilot.helpers.cli.os")
+@patch("pilot.helpers.cli.subprocess")
 def test_terminate_process_not_running(mock_subprocess, mock_os):
-    terminate_process(1234, "not running")
+    with patch("pilot.helpers.cli.is_process_running", return_value=False):
+        terminate_process(1234, "not running")
 
-    mock_subprocess.run.assert_not_called()
-    mock_os.killpg.assert_not_called()
+        mock_subprocess.run.assert_not_called()
+        mock_os.killpg.assert_not_called()
 
 
-@patch("helpers.cli.MIN_COMMAND_RUN_TIME", create=True, new=100)
-@patch("helpers.cli.get_saved_command_run")
-@patch("helpers.cli.run_command")
-@patch("helpers.cli.terminate_process")
+@patch("pilot.helpers.cli.MIN_COMMAND_RUN_TIME", create=True, new=100)
+@patch("pilot.helpers.cli.get_saved_command_run")
+@patch("pilot.helpers.cli.run_command")
+@patch("pilot.helpers.cli.terminate_process")
 def test_execute_command_timeout_exit_code(mock_terminate_process, mock_run, mock_get_saved_command):
     # Given
     project = create_project()
@@ -46,10 +46,10 @@ def mock_run_command(command, path, q, q_stderr):
     return mock_process
 
 
-@patch("helpers.cli.get_saved_command_run")
-@patch("helpers.cli.ask_user", return_value="")
-@patch("helpers.cli.run_command")
-@patch("helpers.cli.terminate_process")
+@patch("pilot.helpers.cli.get_saved_command_run")
+@patch("pilot.helpers.cli.ask_user", return_value="")
+@patch("pilot.helpers.cli.run_command")
+@patch("pilot.helpers.cli.terminate_process")
 def test_execute_command_enter(mock_terminate_process, mock_run, mock_ask, mock_get_saved_command):
     # Given
     project = create_project()
@@ -67,10 +67,10 @@ def test_execute_command_enter(mock_terminate_process, mock_run, mock_ask, mock_
     mock_terminate_process.assert_called_once_with(1234)
 
 
-@patch("helpers.cli.get_saved_command_run")
-@patch("helpers.cli.ask_user", return_value="yes")
-@patch("helpers.cli.run_command")
-@patch("helpers.cli.terminate_process")
+@patch("pilot.helpers.cli.get_saved_command_run")
+@patch("pilot.helpers.cli.ask_user", return_value="yes")
+@patch("pilot.helpers.cli.run_command")
+@patch("pilot.helpers.cli.terminate_process")
 def test_execute_command_yes(mock_terminate_process, mock_run, mock_ask, mock_get_saved_command):
     # Given
     project = create_project()
@@ -88,8 +88,8 @@ def test_execute_command_yes(mock_terminate_process, mock_run, mock_ask, mock_ge
     mock_terminate_process.assert_called_once_with(1234)
 
 
-@patch("helpers.cli.get_saved_command_run")
-@patch("helpers.cli.ask_user", return_value="no")
+@patch("pilot.helpers.cli.get_saved_command_run")
+@patch("pilot.helpers.cli.ask_user", return_value="no")
 def test_execute_command_rejected_with_no(mock_ask, mock_get_saved_command):
     # Given
     project = create_project()
@@ -105,8 +105,8 @@ def test_execute_command_rejected_with_no(mock_ask, mock_get_saved_command):
     assert exit_code is None
 
 
-@patch("helpers.cli.get_saved_command_run")
-@patch("helpers.cli.ask_user", return_value="no, my DNS is not working, ping 8.8.8.8 instead")
+@patch("pilot.helpers.cli.get_saved_command_run")
+@patch("pilot.helpers.cli.ask_user", return_value="no, my DNS is not working, ping 8.8.8.8 instead")
 def test_execute_command_rejected_with_message(mock_ask, mock_get_saved_command):
     # Given
     project = create_project()
@@ -122,7 +122,7 @@ def test_execute_command_rejected_with_message(mock_ask, mock_get_saved_command)
     assert exit_code is None
 
 
-@patch("helpers.cli.execute_command", return_value=("hello", None, 0))
+@patch("pilot.helpers.cli.execute_command", return_value=("hello", None, 0))
 def test_run_command_until_success(mock_execute):
     # Given
     convo = MagicMock()
@@ -138,7 +138,7 @@ def test_run_command_until_success(mock_execute):
     assert convo.send_message.call_count == 1
 
 
-@patch("helpers.cli.execute_command", return_value=("running...", "DONE", None))
+@patch("pilot.helpers.cli.execute_command", return_value=("running...", "DONE", None))
 def test_run_command_until_success_app(mock_execute):
     # Given
     convo = MagicMock()
@@ -155,7 +155,7 @@ def test_run_command_until_success_app(mock_execute):
     assert convo.send_message.call_count == 0
 
 
-@patch("helpers.cli.execute_command", return_value=("error", None, 2))
+@patch("pilot.helpers.cli.execute_command", return_value=("error", None, 2))
 def test_run_command_until_success_error(mock_execute):
     # Given
     convo = MagicMock()
@@ -173,7 +173,7 @@ def test_run_command_until_success_error(mock_execute):
     assert result["cli_response"] == "error"
 
 
-@patch("helpers.cli.execute_command", return_value=("hell", "took longer than 2000ms so I killed it", 0))
+@patch("pilot.helpers.cli.execute_command", return_value=("hell", "took longer than 2000ms so I killed it", 0))
 def test_run_command_until_success_timed_out(mock_execute):
     # Given
     convo = MagicMock()
@@ -191,7 +191,7 @@ def test_run_command_until_success_timed_out(mock_execute):
     assert result["cli_response"] == "hell"
 
 
-@patch("helpers.cli.execute_command", return_value=(None, "DONE", None))
+@patch("pilot.helpers.cli.execute_command", return_value=(None, "DONE", None))
 def test_run_command_until_success_no(mock_execute):
     # Given
     convo = MagicMock()
@@ -208,7 +208,9 @@ def test_run_command_until_success_no(mock_execute):
     assert convo.send_message.call_count == 0
 
 
-@patch("helpers.cli.execute_command", return_value=(None, "no, my DNS is not working, ping 8.8.8.8 instead", None))
+@patch(
+    "pilot.helpers.cli.execute_command", return_value=(None, "no, my DNS is not working, ping 8.8.8.8 instead", None)
+)
 def test_run_command_until_success_rejected(mock_execute):
     # Given
     convo = MagicMock()

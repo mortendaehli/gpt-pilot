@@ -10,15 +10,13 @@ import tiktoken
 from jsonschema import ValidationError, validate
 from prompt_toolkit.styles import Style
 
-from pilot.const.llm import MAX_GPT_MODEL_TOKENS, MIN_TOKENS_FOR_GPT_RESPONSE
+from pilot.const.llm import MAX_GPT_MODEL_TOKENS
 from pilot.helpers.exceptions import ApiKeyNotDefinedError, TokenLimitError
 from pilot.logger.logger import logger, logging
 from pilot.utils.function_calling import FunctionCallSet, FunctionType, add_function_calls_to_request
 from pilot.utils.questionary import styled_text
 from pilot.utils.style import color_red
 from pilot.utils.utils import fix_json, get_prompt
-
-from .telemetry import telemetry
 
 
 def get_tokens_in_messages(messages: List[str]) -> int:
@@ -300,10 +298,6 @@ def stream_gpt_completion(data, req_type, project):
     # Configure for the selected ENDPOINT
     model = os.getenv("MODEL_NAME", "gpt-4")
     endpoint = os.getenv("ENDPOINT")
-
-    # This will be set many times but we don't care, as there are no side-effects to it.
-    telemetry.set("model", model)
-    telemetry.inc("num_llm_requests")
 
     logger.info(f"> Request model: {model}")
     if logger.isEnabledFor(logging.DEBUG):

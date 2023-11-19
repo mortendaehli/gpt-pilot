@@ -4,16 +4,15 @@ from unittest.mock import MagicMock, patch
 
 from dotenv import load_dotenv
 
+from pilot.helpers.agents import CodeMonkey, Developer
+
 load_dotenv()
 
 from pilot.database.models.development_steps import DevelopmentSteps
 from pilot.database.models.files import File
 from pilot.helpers.AgentConvo import AgentConvo
 from pilot.helpers.Project import Project, clear_directory, update_file
-from pilot.tests.test_utils import mock_terminal_size
-
-from .CodeMonkey import CodeMonkey
-from .Developer import Developer
+from tests.test_utils import mock_terminal_size
 
 SEND_TO_LLM = False
 WRITE_TO_FILE = False
@@ -43,8 +42,8 @@ class TestCodeMonkey:
         self.developer = Developer(self.project)
         self.codeMonkey = CodeMonkey(self.project, developer=self.developer)
 
-    @patch("helpers.AgentConvo.get_saved_development_step", return_value=None)
-    @patch("helpers.AgentConvo.save_development_step")
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step", return_value=None)
+    @patch("pilot.helpers.AgentConvo.save_development_step")
     @patch("os.get_terminal_size", mock_terminal_size)
     @patch.object(File, "insert")
     def test_implement_code_changes(self, mock_get_dev, mock_save_dev, mock_file_insert):
@@ -85,8 +84,8 @@ class TestCodeMonkey:
                 assert called_data["path"] == "/" or called_data["path"] == called_data["name"]
                 assert called_data["content"] == "Washington"
 
-    @patch("helpers.AgentConvo.get_saved_development_step")
-    @patch("helpers.AgentConvo.save_development_step")
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step")
+    @patch("pilot.helpers.AgentConvo.save_development_step")
     @patch("os.get_terminal_size", mock_terminal_size)
     @patch.object(File, "insert")
     def test_implement_code_changes_with_read(self, mock_get_dev, mock_save_dev, mock_file_insert):

@@ -5,13 +5,14 @@ from unittest.mock import patch
 import pytest
 from dotenv import load_dotenv
 
+from tests.mock_questionary import MockQuestionary
+from tests.test_utils import assert_non_empty_string
+
 load_dotenv()
 
 from pilot.helpers.agents.TechLead import DEVELOPMENT_PLANNING_STEP, TechLead
 from pilot.helpers.Project import Project
 from pilot.main import get_custom_print
-from pilot.tests.mock_questionary import MockQuestionary
-from pilot.tests.test_utils import assert_non_empty_string
 
 
 class TestTechLead:
@@ -47,15 +48,15 @@ The development process will include the creation of user stories and tasks, bas
         self.project.current_step = DEVELOPMENT_PLANNING_STEP
 
     @pytest.mark.uses_tokens
-    @patch("helpers.AgentConvo.get_saved_development_step", return_value=None)
-    @patch("helpers.agents.TechLead.save_progress", return_value=None)
-    @patch("helpers.agents.TechLead.get_progress_steps", return_value=None)
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step", return_value=None)
+    @patch("pilot.helpers.agents.TechLead.save_progress", return_value=None)
+    @patch("pilot.helpers.agents.TechLead.get_progress_steps", return_value=None)
     def test_create_development_plan(self, mock_get_saved_step, mock_save_progress, mock_get_progress_steps):
         self.techLead = TechLead(self.project)
 
         mock_questionary = MockQuestionary(["", "", "no"])
 
-        with patch("utils.questionary.questionary", mock_questionary):
+        with patch("pilot.utils.questionary.questionary", mock_questionary):
             # When
             development_plan = self.techLead.create_development_plan()
 

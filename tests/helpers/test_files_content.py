@@ -1,11 +1,12 @@
 import os
 
-from .files import get_files_content
+import pilot.helpers
+from pilot.helpers.files import get_files_content
 
 
 def test_get_files_content():
     # Given
-    directory = os.path.dirname(__file__)
+    directory = os.path.dirname(pilot.helpers.__file__)
 
     # When
     files = get_files_content(

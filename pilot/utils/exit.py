@@ -1,4 +1,3 @@
-# exit.py
 import hashlib
 import os
 
@@ -6,7 +5,6 @@ import requests
 
 from pilot.helpers.cli import terminate_running_processes
 from pilot.utils.questionary import styled_text
-from pilot.utils.telemetry import telemetry
 
 
 def send_telemetry(path_id):
@@ -53,7 +51,6 @@ def ask_to_store_prompt(project, path_id):
     try:
         answer = styled_text(project, question, ignore_user_input_count=True)
         if answer == "":
-            telemetry.set("initial_prompt", init_prompt)
             response = requests.post("https://api.pythagora.io/telemetry", json=telemetry_data)
             response.raise_for_status()
     except requests.RequestException as err:
@@ -68,7 +65,6 @@ def ask_user_feedback(project, path_id, ask_feedback):
     if ask_feedback:
         feedback = styled_text(project, question, ignore_user_input_count=True)
     if feedback:  # only send if user provided feedback
-        telemetry.set("user_feedback", feedback)
         send_feedback(feedback, path_id)
 
 
@@ -82,7 +78,6 @@ def ask_user_email(project, path_id, ask_feedback):
     )
     feedback = styled_text(project, question, ignore_user_input_count=True)
     if feedback:  # only send if user provided feedback
-        telemetry.set("user_contact", feedback)
         return True
     return False
 
@@ -100,10 +95,5 @@ def exit_gpt_pilot(project, ask_feedback=True):
     # TODO: Turned off for now because we're asking for email, and we don't want to
     # annoy people.
     # ask_user_feedback(project, path_id, ask_feedback)
-
-    telemetry.set("num_commands", project.command_runs_count if project is not None else 0)
-    telemetry.set("num_inputs", project.user_inputs_count if project is not None else 0)
-
-    telemetry.send()
 
     print("Exit", type="exit")

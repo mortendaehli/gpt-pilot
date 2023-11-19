@@ -12,8 +12,6 @@ from pilot.helpers.agents.Architect import Architect
 from pilot.helpers.agents.TechLead import TechLead
 from pilot.helpers.Project import Project
 from pilot.main import get_custom_print
-from pilot.tests.mock_questionary import MockQuestionary
-from pilot.tests.test_utils import assert_non_empty_string
 from pilot.utils.function_calling import FunctionType, parse_agent_response
 from pilot.utils.llm_connection import (
     assert_json_response,
@@ -23,6 +21,7 @@ from pilot.utils.llm_connection import (
     retry_on_exception,
     stream_gpt_completion,
 )
+from tests.test_utils import assert_non_empty_string
 
 load_dotenv()
 
@@ -83,7 +82,7 @@ def test_clean_json_response_boolean_in_python():
     assert "\"content\": \"json = {'is_true': True,\\n 'is_false': False}\"" in response
 
 
-@patch("utils.llm_connection.styled_text", return_value="")
+@patch("pilot.utils.llm_connection.styled_text", return_value="")
 class TestRetryOnException:
     def setup_method(self):
         self.function: FunctionType = {
@@ -365,8 +364,8 @@ class TestLlmConnection:
     def setup_method(self):
         builtins.print, ipc_client_instance = get_custom_print({})
 
-    @patch("utils.llm_connection.requests.post")
-    @patch("utils.llm_connection.time.sleep")
+    @patch("pilot.utils.llm_connection.requests.post")
+    @patch("pilot.utils.llm_connection.time.sleep")
     def test_rate_limit_error(self, mock_sleep, mock_post, monkeypatch):
         monkeypatch.setenv("OPENAI_API_KEY", "secret")
 
@@ -431,7 +430,7 @@ class TestLlmConnection:
         ]
         # mock_sleep.call
 
-    @patch("utils.llm_connection.requests.post")
+    @patch("pilot.utils.llm_connection.requests.post")
     def test_stream_gpt_completion(self, mock_post, monkeypatch):
         # Given streaming JSON response
         monkeypatch.setenv("OPENAI_API_KEY", "secret")
@@ -461,7 +460,7 @@ class TestLlmConnection:
 
         mock_post.return_value = mock_response
 
-        with patch("utils.llm_connection.requests.post", return_value=mock_response):
+        with patch("pilot.utils.llm_connection.requests.post", return_value=mock_response):
             # When
             response = stream_gpt_completion(
                 {

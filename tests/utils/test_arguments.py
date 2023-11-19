@@ -1,9 +1,7 @@
 import uuid
 from unittest.mock import mock_open, patch
 
-import pytest
-
-from .arguments import get_email, username_to_uuid
+from pilot.utils.arguments import get_email, username_to_uuid
 
 
 def test_email_found_in_gitconfig():

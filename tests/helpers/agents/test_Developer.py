@@ -8,14 +8,13 @@ import requests
 from dotenv import load_dotenv
 
 from pilot.helpers.AgentConvo import AgentConvo
+from pilot.helpers.agents import ENVIRONMENT_SETUP_STEP, Developer
+from tests.mock_questionary import MockQuestionary
 
 load_dotenv()
 
-from pilot.helpers.test_Project import create_project
 from pilot.main import get_custom_print
-from pilot.tests.mock_questionary import MockQuestionary
-
-from .Developer import ENVIRONMENT_SETUP_STEP, Developer
+from tests.helpers.test_Project import create_project
 
 
 class TestDeveloper:
@@ -37,13 +36,13 @@ class TestDeveloper:
         self.developer = Developer(self.project)
 
     @pytest.mark.uses_tokens
-    @patch("helpers.AgentConvo.get_saved_development_step")
-    @patch("helpers.AgentConvo.save_development_step")
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step")
+    @patch("pilot.helpers.AgentConvo.save_development_step")
     @patch(
         "helpers.AgentConvo.create_gpt_chat_completion",
         return_value={"text": '{"command": "python --version", "timeout": 10}'},
     )
-    @patch("helpers.cli.execute_command", return_value=("", "DONE", None))
+    @patch("pilot.helpers.cli.execute_command", return_value=("", "DONE", None))
     def test_install_technology(self, mock_execute_command, mock_completion, mock_save, mock_get_saved_step):
         # Given
         self.developer.convo_os_specific_tech = AgentConvo(self.developer)
@@ -55,9 +54,12 @@ class TestDeveloper:
         assert llm_response == "DONE"
         mock_execute_command.assert_called_once_with(self.project, "python --version", timeout=10, command_id=None)
 
-    @patch("helpers.AgentConvo.get_saved_development_step")
-    @patch("helpers.AgentConvo.save_development_step")
-    @patch("helpers.AgentConvo.create_gpt_chat_completion", return_value={"text": '{"tasks": [{"command": "ls -al"}]}'})
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step")
+    @patch("pilot.helpers.AgentConvo.save_development_step")
+    @patch(
+        "pilot.helpers.AgentConvo.create_gpt_chat_completion",
+        return_value={"text": '{"tasks": [{"command": "ls -al"}]}'},
+    )
     def test_implement_task(self, mock_completion, mock_save, mock_get_saved_step):
         # Given any project
         project = create_project()
@@ -83,10 +85,10 @@ class TestDeveloper:
         assert developer.execute_task.call_count == 1
         assert developer.execute_task.call_args[0][1] == [{"command": "ls -al"}]
 
-    @patch("helpers.AgentConvo.get_saved_development_step")
-    @patch("helpers.AgentConvo.save_development_step")
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step")
+    @patch("pilot.helpers.AgentConvo.save_development_step")
     @patch(
-        "helpers.AgentConvo.create_gpt_chat_completion",
+        "pilot.helpers.AgentConvo.create_gpt_chat_completion",
         return_value={
             "text": '{"tasks": [{"command": "ls -al"}, {"command": "ls -al src"}, {"command": "ls -al test"}, {"command": "ls -al build"}]}'
         },
@@ -140,15 +142,15 @@ This step will not be executed. no, use a better command
         # and call `execute_task()` again
         assert developer.execute_task.call_count == 2
 
-    @patch("helpers.AgentConvo.get_saved_development_step")
-    @patch("helpers.AgentConvo.save_development_step")
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step")
+    @patch("pilot.helpers.AgentConvo.save_development_step")
     # GET_TEST_TYPE has optional properties, so we need to be able to handle missing args.
     @patch(
-        "helpers.AgentConvo.create_gpt_chat_completion",
+        "pilot.helpers.AgentConvo.create_gpt_chat_completion",
         return_value={"text": '{"type": "command_test", "command": {"command": "npm run test", "timeout": 3000}}'},
     )
     # 2nd arg of return_value: `None` to debug, 'DONE' if successful
-    @patch("helpers.cli.execute_command", return_value=("stdout:\n```\n\n```", "DONE", None))
+    @patch("pilot.helpers.cli.execute_command", return_value=("stdout:\n```\n\n```", "DONE", None))
     # @patch('helpers.cli.ask_user', return_value='yes')
     # @patch('helpers.cli.get_saved_command_run')
     def test_code_changes_command_test(
@@ -172,14 +174,14 @@ This step will not be executed. no, use a better command
         # Then
         assert result == {"success": True, "cli_response": "stdout:\n```\n\n```"}
 
-    @patch("helpers.AgentConvo.get_saved_development_step")
-    @patch("helpers.AgentConvo.save_development_step")
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step")
+    @patch("pilot.helpers.AgentConvo.save_development_step")
     # GET_TEST_TYPE has optional properties, so we need to be able to handle missing args.
     @patch(
-        "helpers.AgentConvo.create_gpt_chat_completion",
+        "pilot.helpers.AgentConvo.create_gpt_chat_completion",
         return_value={"text": '{"type": "manual_test", "manual_test_description": "Does it look good?"}'},
     )
-    @patch("helpers.Project.ask_user", return_value="continue")
+    @patch("pilot.helpers.Project.ask_user", return_value="continue")
     def test_code_changes_manual_test_continue(
         self, mock_get_saved_step, mock_save, mock_chat_completion, mock_ask_user
     ):
@@ -195,10 +197,10 @@ This step will not be executed. no, use a better command
         assert result == {"success": True, "user_input": "continue"}
 
     @pytest.mark.skip("endless loop in questionary")
-    @patch("helpers.AgentConvo.get_saved_development_step")
-    @patch("helpers.AgentConvo.save_development_step")
-    @patch("helpers.AgentConvo.create_gpt_chat_completion")
-    @patch("utils.questionary.get_saved_user_input")
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step")
+    @patch("pilot.helpers.AgentConvo.save_development_step")
+    @patch("pilot.helpers.AgentConvo.create_gpt_chat_completion")
+    @patch("pilot.utils.questionary.get_saved_user_input")
     # https://github.com/Pythagora-io/gpt-pilot/issues/35
     def test_code_changes_manual_test_no(
         self, mock_get_saved_user_input, mock_chat_completion, mock_save, mock_get_saved_step
@@ -220,18 +222,18 @@ This step will not be executed. no, use a better command
 
         mock_questionary = MockQuestionary(["no", "no"])
 
-        with patch("utils.questionary.questionary", mock_questionary):
+        with patch("pilot.utils.questionary.questionary", mock_questionary):
             # When
             result = self.developer.test_code_changes(monkey, convo)
 
             # Then
             assert result == {"success": True, "user_input": "no"}
 
-    @patch("helpers.cli.execute_command", return_value=("stdout:\n```\n\n```", "DONE", None))
-    @patch("helpers.AgentConvo.get_saved_development_step")
-    @patch("helpers.AgentConvo.save_development_step")
-    @patch("utils.llm_connection.requests.post")
-    @patch("utils.questionary.get_saved_user_input")
+    @patch("pilot.helpers.cli.execute_command", return_value=("stdout:\n```\n\n```", "DONE", None))
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step")
+    @patch("pilot.helpers.AgentConvo.save_development_step")
+    @patch("pilot.utils.llm_connection.requests.post")
+    @patch("pilot.utils.questionary.get_saved_user_input")
     def test_test_code_changes_invalid_json(
         self, mock_get_saved_user_input, mock_requests_post, mock_save, mock_get_saved_step, mock_execute, monkeypatch
     ):

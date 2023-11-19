@@ -69,8 +69,8 @@ class TestProject:
             # 'None path absolute file', 'home path', 'home path same name', 'absolute path with name'
         ],
     )
-    @patch("helpers.Project.update_file")
-    @patch("helpers.Project.File")
+    @patch("pilot.helpers.Project.update_file")
+    @patch("pilot.helpers.Project.File")
     def test_save_file(self, mock_file_insert, mock_update_file, test_data):
         # Given
         data = {"content": "Hello World!"}
@@ -107,8 +107,8 @@ class TestProject:
         ],
         ids=["name == path", "empty path", "slash path", "None path", "None name", "empty name"],
     )
-    @patch("helpers.Project.update_file")
-    @patch("helpers.Project.File")
+    @patch("pilot.helpers.Project.update_file")
+    @patch("pilot.helpers.Project.File")
     def test_save_file_Dockerfile(self, mock_file_insert, mock_update_file, test_data):
         # Given
         data = {"content": "Hello World!"}
@@ -138,8 +138,8 @@ class TestProject:
         ],
         ids=["name == path", "empty path", "slash path", "None path", "None name", "empty name"],
     )
-    @patch("helpers.Project.update_file")
-    @patch("helpers.Project.File")
+    @patch("pilot.helpers.Project.update_file")
+    @patch("pilot.helpers.Project.File")
     def test_save_file_dot_env(self, mock_file_insert, mock_update_file, test_data):
         # Given
         data = {"content": "Hello World!"}
@@ -436,9 +436,9 @@ class TestProjectFileLists:
 """.lstrip()
         )
 
-    @patch("helpers.Project.DevelopmentSteps.get_or_create", return_value=("test", True))
-    @patch("helpers.Project.File.get_or_create", return_value=("test", True))
-    @patch("helpers.Project.FileSnapshot.get_or_create", return_value=(MagicMock(), True))
+    @patch("pilot.helpers.Project.DevelopmentSteps.get_or_create", return_value=("test", True))
+    @patch("pilot.helpers.Project.File.get_or_create", return_value=("test", True))
+    @patch("pilot.helpers.Project.FileSnapshot.get_or_create", return_value=(MagicMock(), True))
     def test_save_files_snapshot(self, mock_snap, mock_file, mock_step):
         # Given a snapshot of the files in the project
 

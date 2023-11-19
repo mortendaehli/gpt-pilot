@@ -5,12 +5,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 from dotenv import load_dotenv
 
+from tests.helpers.test_Project import create_project
+from tests.mock_questionary import MockQuestionary
+
 load_dotenv()
 from pilot.helpers.AgentConvo import AgentConvo
 from pilot.helpers.agents.Developer import Developer
 from pilot.helpers.Debugger import Debugger
-from pilot.helpers.test_Project import create_project
-from pilot.tests.mock_questionary import MockQuestionary
 from pilot.utils.custom_print import get_custom_print
 
 # NOTE: this test needs to be ran in debug with breakpoints
@@ -19,11 +20,11 @@ from pilot.utils.custom_print import get_custom_print
 @pytest.mark.uses_tokens
 @patch("pilot.helpers.AgentConvo.get_saved_development_step")
 @patch("pilot.helpers.AgentConvo.save_development_step")
-@patch("utils.questionary.get_saved_user_input")
-@patch("utils.questionary.save_user_input")
-@patch("helpers.cli.get_saved_command_run")
-@patch("helpers.cli.run_command")
-@patch("helpers.cli.save_command_run")
+@patch("pilot.utils.questionary.get_saved_user_input")
+@patch("pilot.utils.questionary.save_user_input")
+@patch("pilot.helpers.cli.get_saved_command_run")
+@patch("pilot.helpers.cli.run_command")
+@patch("pilot.helpers.cli.save_command_run")
 # @patch('pilot.helpers.cli.execute_command', return_value=('', 'DONE', 0))
 def test_debug(
     # mock_execute_command,
@@ -87,7 +88,7 @@ stdout:
 
     mock_questionary = MockQuestionary(["", ""])
 
-    with patch("utils.questionary.questionary", mock_questionary):
+    with patch("pilot.utils.questionary.questionary", mock_questionary):
         # When
         result = debugger.debug(convo, command={"command": "npm run start"}, is_root_task=True)
 
@@ -95,9 +96,9 @@ stdout:
         assert result == {"success": True}
 
 
-@patch("helpers.AgentConvo.get_saved_development_step")
-@patch("helpers.AgentConvo.create_gpt_chat_completion")
-@patch("helpers.AgentConvo.save_development_step")
+@patch("pilot.helpers.AgentConvo.get_saved_development_step")
+@patch("pilot.helpers.AgentConvo.create_gpt_chat_completion")
+@patch("pilot.helpers.AgentConvo.save_development_step")
 def test_debug_need_to_see_output(mock_save_step, mock_get_completion, mock_get_step):
     # Given
     builtins.print, ipc_client_instance = get_custom_print({})

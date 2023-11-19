@@ -22,7 +22,6 @@ from pilot.prompts.prompts import ask_user
 from pilot.utils.dot_gpt_pilot import DotGptPilot
 from pilot.utils.questionary import styled_text
 from pilot.utils.style import color_cyan, color_green, color_white_bold, color_yellow_bold
-from pilot.utils.telemetry import telemetry
 
 
 class Project:
@@ -92,7 +91,6 @@ class Project:
         """
         Start the project.
         """
-        telemetry.start()
         self.project_manager = ProductOwner(self)
         self.project_manager.get_project_description()
 

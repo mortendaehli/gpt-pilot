@@ -1,13 +1,12 @@
 import builtins
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from dotenv import load_dotenv
 
-from pilot.helpers.test_Project import create_project
+from pilot.helpers.agents.ProductOwner import ProductOwner
 from pilot.main import get_custom_print
-
-from .ProductOwner import ProductOwner
+from tests.helpers.test_Project import create_project
 
 load_dotenv()
 
@@ -16,8 +15,8 @@ class TestProductOwner:
     def setup_method(self):
         builtins.print, ipc_client_instance = get_custom_print({})
 
-    @patch("prompts.prompts.ask_user", return_value="yes")
-    @patch("prompts.prompts.create_gpt_chat_completion")
+    @patch("pilot.prompts.prompts.ask_user", return_value="yes")
+    @patch("pilot.prompts.prompts.create_gpt_chat_completion")
     def test_ask_clarifying_questions(self, mock_completion, mock_ask):
         # Given
         project = create_project()
@@ -41,7 +40,7 @@ class TestProductOwner:
             assert "Getting additional answers" not in msg["content"]
 
     @pytest.mark.uses_tokens
-    @patch("helpers.AgentConvo.get_saved_development_step")
+    @patch("pilot.helpers.AgentConvo.get_saved_development_step")
     # @patch('helpers.AgentConvo.create_gpt_chat_completion', return_value={'text': 'A python app which displays "Hello World" on the console'})
     def test_generate_project_summary(
         self,

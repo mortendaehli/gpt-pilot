@@ -4,13 +4,14 @@ from unittest.mock import patch
 import pytest
 from dotenv import load_dotenv
 
+from pilot.main import init
+from pilot.utils.custom_print import get_custom_print
+from tests.mock_questionary import MockQuestionary
+
 load_dotenv()
 
 from pilot.database.database import create_tables
 from pilot.helpers.Project import Project
-from pilot.tests.mock_questionary import MockQuestionary
-
-from .main import get_custom_print, init
 
 
 def test_init():
@@ -64,5 +65,5 @@ def test_end_to_end(endpoint, model, monkeypatch):
     )
 
     # When
-    with patch("utils.questionary.questionary", mock_questionary):
+    with patch("pilot.utils.questionary.questionary", mock_questionary):
         project.start()

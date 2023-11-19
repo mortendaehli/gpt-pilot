@@ -23,9 +23,7 @@ from pilot.utils.arguments import get_arguments
 from pilot.utils.custom_open import get_custom_open
 from pilot.utils.custom_print import get_custom_print
 from pilot.utils.exit import exit_gpt_pilot
-from pilot.utils.settings import loader, settings
 from pilot.utils.style import color_red
-from pilot.utils.telemetry import telemetry
 
 
 def init():
@@ -80,13 +78,11 @@ if __name__ == "__main__":
             project = Project(args, ipc_client_instance=ipc_client_instance)
             project.start()
             project.finish()
-            telemetry.set("end_result", "success")
     except Exception:
         print(color_red("---------- GPT PILOT EXITING WITH ERROR ----------"))
         traceback.print_exc()
         print(color_red("--------------------------------------------------"))
         ask_feedback = False
-        telemetry.set("end_result", "failure")
     finally:
         if run_exit_fn:
             exit_gpt_pilot(project, ask_feedback)

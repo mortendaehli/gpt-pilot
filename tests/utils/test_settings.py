@@ -11,7 +11,7 @@ def test_settings_initializes_known_variables():
 
 def test_settings_init_raise_error_on_unknown_variables():
     with pytest.raises(ValueError):
-        settings = Settings(unknown="value")
+        _ = Settings(unknown="value")
 
 
 def test_settings_raises_error_when_saving_unknown_variables():

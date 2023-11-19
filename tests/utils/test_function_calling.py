@@ -1,7 +1,6 @@
 from pilot.const.function_calls import ARCHITECTURE
+from pilot.utils.function_calling import JsonPrompter, parse_agent_response
 from pilot.utils.llm_connection import clean_json_response
-
-from .function_calling import JsonPrompter, parse_agent_response
 
 
 class TestFunctionCalling:
