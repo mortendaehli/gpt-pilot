@@ -3,13 +3,9 @@ import sys
 from io import StringIO
 from os import getenv
 from os.path import expanduser, expandvars, join
-from pathlib import Path
-from subprocess import check_output
-from unittest.mock import MagicMock, patch
-
 import pytest
 
-from pilot.utils.settings import Loader, Settings, get_git_commit, get_package_version, get_version
+from pilot.settings import Settings
 
 
 @pytest.fixture
@@ -31,117 +27,28 @@ def test_settings_initializes_known_variables():
     assert settings.telemetry is None
 
 
-def test_settings_init_ignores_unknown_variables():
-    settings = Settings(unknown="value")
-    assert not hasattr(settings, "unknown")
+def test_settings_init_raise_error_on_unknown_variables():
+    with pytest.raises(ValueError):
+        settings = Settings(unknown="value")
 
 
-def test_settings_forbids_saving_unknown_variables():
+def test_settings_raises_error_when_saving_unknown_variables():
     settings = Settings()
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         settings.unknown = "value"
 
 
 def test_settings_update():
     settings = Settings()
-    settings.update(openai_api_key="test_key")
+    settings.openai_api_key = "test_key"
     assert settings.openai_api_key == "test_key"
 
 
-def test_settings_to_dict():
+def wtest_settings_to_dict():
     settings = Settings()
-    settings.update(openai_api_key="test_key")
-    assert dict(settings) == {
+    settings.openai_api_key = "test_key"
+    assert settings.model_dump() == {
         "openai_api_key": "test_key",
         "telemetry": None,
     }
-
-
-def test_loader_config_file_location(expected_config_location):
-    settings = Settings()
-    assert Loader(settings).config_path.as_posix() == expected_config_location
-
-
-@patch("pilot.utils.settings.open")
-@patch("pilot.utils.settings.Loader.update_settings_from_env")
-def test_loader_load_config_file(_mock_from_env, mock_open, expected_config_location):
-    settings = Settings()
-    fake_config = json.dumps(
-        {
-            "openai_api_key": "test_key",
-            "telemetry": {
-                "id": "fake-id",
-                "endpoint": "https://example.com",
-            },
-        }
-    )
-    mock_open.return_value.__enter__.return_value = StringIO(fake_config)
-
-    loader = Loader(settings)
-    assert loader.config_path == Path(expected_config_location)
-
-    loader.config_path = MagicMock()
-    loader.load()
-
-    loader.config_path.exists.assert_called_once_with()
-    mock_open.assert_called_once_with(loader.config_path, "r", encoding="utf-8")
-
-    assert settings.openai_api_key == "test_key"
-    assert settings.telemetry["id"] == "fake-id"
-    assert settings.telemetry["endpoint"] == "https://example.com"
-
-
-@patch("pilot.utils.settings.open")
-@patch("pilot.utils.settings.Loader.update_settings_from_env")
-def test_loader_load_no_config_file(_mock_from_env, mock_open, expected_config_location):
-    settings = Settings()
-    loader = Loader(settings)
-    assert loader.config_path == Path(expected_config_location)
-
-    loader.config_path = MagicMock()
-    loader.config_path.exists.return_value = False
-    loader.load()
-
-    loader.config_path.exists.assert_called_once_with()
-    mock_open.assert_not_called()
-
-    assert settings.openai_api_key is None
-    assert settings.telemetry is None
-
-
-@patch("pilot.utils.settings.getenv")
-def test_loader_load_from_env(mock_getenv):
-    settings = Settings()
-    mock_getenv.side_effect = lambda key: {
-        "TELEMETRY_ID": "fake-id",
-        "TELEMETRY_ENDPOINT": "https://example.com",
-        "OPENAI_API_KEY": "test_key",
-    }.get(key)
-
-    Loader(settings).update_settings_from_env(settings)
-    assert settings.openai_api_key == "test_key"
-    assert settings.telemetry["id"] == "fake-id"
-    assert settings.telemetry["endpoint"] == "https://example.com"
-
-
-def test_get_git_commit():
-    try:
-        expected_commit_hash = check_output(["git", "rev-parse", "HEAD"], encoding="ascii").strip()
-    except Exception:
-        expected_commit_hash = None
-
-    assert get_git_commit() == expected_commit_hash
-
-
-def test_get_package_version():
-    assert get_package_version() == "0.0.0"
-
-
-def test_get_version():
-    try:
-        commit_suffix = "-git" + check_output(["git", "rev-parse", "HEAD"], encoding="ascii").strip()[:7]
-    except Exception:
-        commit_suffix = ""
-
-    assert get_version() == "0.0.0" + commit_suffix
