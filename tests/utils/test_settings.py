@@ -1,24 +1,6 @@
-import json
-import sys
-from io import StringIO
-from os import getenv
-from os.path import expanduser, expandvars, join
 import pytest
 
 from pilot.settings import Settings
-
-
-@pytest.fixture
-def expected_config_location():
-    xdg_config_home = getenv("XDG_CONFIG_HOME")
-    if xdg_config_home:
-        return join(xdg_config_home, "gpt-pilot", "config.json")
-    elif sys.platform in ["darwin", "linux"]:
-        return expanduser("~/.gpt-pilot/config.json")
-    elif sys.platform == "win32":
-        return expandvars("%APPDATA%\\GPT Pilot\\config.json")
-    else:
-        raise RuntimeError(f"Unknown platform: {sys.platform}")
 
 
 def test_settings_initializes_known_variables():
