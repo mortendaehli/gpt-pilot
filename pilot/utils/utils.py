@@ -1,34 +1,36 @@
 # utils/utils.py
 
 import datetime
+import hashlib
+import json
 import os
 import platform
-import uuid
-import distro
-import json
-import hashlib
 import re
+import uuid
+
+import distro
 from jinja2 import Environment, FileSystemLoader
+
+from pilot.const.common import ROLES, STEPS
+from pilot.const.llm import END_RESPONSE, MAX_QUESTIONS
+from pilot.logger.logger import logger
+
 from .style import color_green
 
-from const.llm import MAX_QUESTIONS, END_RESPONSE
-from const.common import ROLES, STEPS
-from logger.logger import logger
-
-prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts')
+prompts_path = os.path.join(os.path.dirname(__file__), "..", "prompts")
 file_loader = FileSystemLoader(prompts_path)
 env = Environment(loader=file_loader)
 
 
 def capitalize_first_word_with_underscores(s):
     # Split the string into words based on underscores.
-    words = s.split('_')
+    words = s.split("_")
 
     # Capitalize the first word and leave the rest unchanged.
     words[0] = words[0].capitalize()
 
     # Join the words back into a string with underscores.
-    capitalized_string = '_'.join(words)
+    capitalized_string = "_".join(words)
 
     return capitalized_string
 
@@ -55,13 +57,10 @@ def get_prompt_components(data):
 
     # Create an empty dictionary to store the file contents.
     prompts_components = {}
-    data.update({
-        'MAX_QUESTIONS': MAX_QUESTIONS,
-        'END_RESPONSE': END_RESPONSE
-    })
+    data.update({"MAX_QUESTIONS": MAX_QUESTIONS, "END_RESPONSE": END_RESPONSE})
 
     # Create a FileSystemLoader
-    prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts/components')
+    prompts_path = os.path.join(os.path.dirname(__file__), "..", "prompts/components")
     file_loader = FileSystemLoader(prompts_path)
 
     # Create the Jinja2 environment
@@ -84,17 +83,14 @@ def get_prompt_components(data):
     return data.update(prompts_components)
 
 
-def get_sys_message(role,args=None):
+def get_sys_message(role, args=None):
     """
     :param role: 'product_owner', 'architect', 'dev_ops', 'tech_lead', 'full_stack_developer', 'code_monkey'
     :return: { "role": "system", "content": "You are a {role}... You do..." }
     """
-    content = get_prompt(f'system_messages/{role}.prompt',args)
+    content = get_prompt(f"system_messages/{role}.prompt", args)
 
-    return {
-        "role": "system",
-        "content": content
-    }
+    return {"role": "system", "content": content}
 
 
 def find_role_from_step(target):
@@ -102,7 +98,7 @@ def find_role_from_step(target):
         if target in values:
             return role
 
-    return 'product_owner'
+    return "product_owner"
 
 
 def get_os_info():
@@ -116,9 +112,9 @@ def get_os_info():
     }
 
     if os_info["OS"] == "Linux":
-        os_info["Distribution"] = ' '.join(distro.linux_distribution(full_distribution_name=True))
+        os_info["Distribution"] = " ".join(distro.linux_distribution(full_distribution_name=True))
     elif os_info["OS"] == "Windows":
-        os_info["Win32 Version"] = ' '.join(platform.win32_ver())
+        os_info["Win32 Version"] = " ".join(platform.win32_ver())
     elif os_info["OS"] == "Mac":
         os_info["Mac Version"] = platform.mac_ver()[0]
 
@@ -139,7 +135,7 @@ def should_execute_step(arg_step, current_step):
 
 
 def step_already_finished(args, step):
-    args.update(step['app_data'])
+    args.update(step["app_data"])
 
     message = f"✅  {capitalize_first_word_with_underscores(step['step'])}"
     print(color_green(message))
@@ -147,15 +143,15 @@ def step_already_finished(args, step):
 
 
 def generate_app_data(args):
-    return {'app_id': args['app_id'], 'app_type': args['app_type']}
+    return {"app_id": args["app_id"], "app_type": args["app_type"]}
 
 
 def array_of_objects_to_string(array):
-    return '\n'.join([f'{key}: {value}' for key, value in array.items()])
+    return "\n".join([f"{key}: {value}" for key, value in array.items()])
 
 
 def hash_data(data):
-    serialized_data = json.dumps(replace_functions(data), sort_keys=True).encode('utf-8')
+    serialized_data = json.dumps(replace_functions(data), sort_keys=True).encode("utf-8")
     return hashlib.sha256(serialized_data).hexdigest()
 
 
@@ -171,8 +167,8 @@ def replace_functions(obj):
 
 
 def fix_json(s):
-    s = s.replace('True', 'true')
-    s = s.replace('False', 'false')
+    s = s.replace("True", "true")
+    s = s.replace("False", "false")
     # s = s.replace('`', '"')
     return fix_json_newlines(s)
 
@@ -181,19 +177,20 @@ def fix_json_newlines(s):
     pattern = r'("(?:\\\\n|\\.|[^"\\])*")'
 
     def replace_newlines(match):
-        return match.group(1).replace('\n', '\\n')
+        return match.group(1).replace("\n", "\\n")
 
     return re.sub(pattern, replace_newlines, s)
 
 
 def clean_filename(filename):
     # Remove invalid characters
-    cleaned_filename = re.sub(r'[<>:"/\\|?*]', '', filename)
+    cleaned_filename = re.sub(r'[<>:"/\\|?*]', "", filename)
 
     # Replace whitespace with underscore
-    cleaned_filename = re.sub(r'\s', '_', cleaned_filename)
+    cleaned_filename = re.sub(r"\s", "_", cleaned_filename)
 
     return cleaned_filename
+
 
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""

@@ -1,7 +1,7 @@
+import os
 from typing import Union
 
-from utils.style import color_green
-import os
+from pilot.utils.style import color_green
 
 
 def update_file(path: str, new_content: Union[str, bytes]):
@@ -20,6 +20,7 @@ def update_file(path: str, new_content: Union[str, bytes]):
         file.write(new_content)
         print(color_green(f"Updated file {path}"))
 
+
 def get_files_content(directory, ignore=[]):
     return_array = []
 
@@ -33,19 +34,22 @@ def get_files_content(directory, ignore=[]):
                 continue
 
             path = os.path.join(root, file)
-            with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
                 file_content = f.read()
 
             file_name = os.path.basename(path)
-            relative_path = path.replace(directory, '').replace('\\', '/').replace('/' + file_name, '')
-            return_array.append({
-                'name': file_name,
-                'path': relative_path,
-                'content': file_content,
-                'full_path': path,
-            })
+            relative_path = path.replace(directory, "").replace("\\", "/").replace("/" + file_name, "")
+            return_array.append(
+                {
+                    "name": file_name,
+                    "path": relative_path,
+                    "content": file_content,
+                    "full_path": path,
+                }
+            )
 
     return return_array
+
 
 def clear_directory(dir_path, ignore=[]):
     for root, dirs, files in os.walk(dir_path, topdown=True):

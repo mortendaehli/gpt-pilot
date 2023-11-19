@@ -1,27 +1,29 @@
-import re
-import requests
+import json
 import os
+import re
 import sys
 import time
-import json
+from typing import List
+
+import requests
 import tiktoken
+from jsonschema import ValidationError, validate
 from prompt_toolkit.styles import Style
 
-from jsonschema import validate, ValidationError
-from utils.style import color_red
-from typing import List
-from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
-from logger.logger import logger, logging
-from helpers.exceptions import TokenLimitError, ApiKeyNotDefinedError
-from utils.utils import fix_json, get_prompt
-from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
-from utils.questionary import styled_text
+from pilot.const.llm import MAX_GPT_MODEL_TOKENS, MIN_TOKENS_FOR_GPT_RESPONSE
+from pilot.helpers.exceptions import ApiKeyNotDefinedError, TokenLimitError
+from pilot.logger.logger import logger, logging
+from pilot.utils.function_calling import FunctionCallSet, FunctionType, add_function_calls_to_request
+from pilot.utils.questionary import styled_text
+from pilot.utils.style import color_red
+from pilot.utils.utils import fix_json, get_prompt
 
 from .telemetry import telemetry
 
+
 def get_tokens_in_messages(messages: List[str]) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 tokenizer
-    tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
+    tokenized_messages = [tokenizer.encode(message["content"]) for message in messages]
     return sum(len(tokens) for tokens in tokenized_messages)
 
 
@@ -31,25 +33,25 @@ def num_tokens_from_functions(functions):
 
     num_tokens = 0
     for function in functions:
-        function_tokens = len(encoding.encode(function['name']))
-        function_tokens += len(encoding.encode(function['description']))
+        function_tokens = len(encoding.encode(function["name"]))
+        function_tokens += len(encoding.encode(function["description"]))
 
-        if 'parameters' in function:
-            parameters = function['parameters']
-            if 'properties' in parameters:
-                for propertiesKey in parameters['properties']:
+        if "parameters" in function:
+            parameters = function["parameters"]
+            if "properties" in parameters:
+                for propertiesKey in parameters["properties"]:
                     function_tokens += len(encoding.encode(propertiesKey))
-                    v = parameters['properties'][propertiesKey]
+                    v = parameters["properties"][propertiesKey]
                     for field in v:
-                        if field == 'type':
+                        if field == "type":
                             function_tokens += 2
-                            function_tokens += len(encoding.encode(v['type']))
-                        elif field == 'description':
+                            function_tokens += len(encoding.encode(v["type"]))
+                        elif field == "description":
                             function_tokens += 2
-                            function_tokens += len(encoding.encode(v['description']))
-                        elif field == 'enum':
+                            function_tokens += len(encoding.encode(v["description"]))
+                        elif field == "enum":
                             function_tokens -= 3
-                            for o in v['enum']:
+                            for o in v["enum"]:
                                 function_tokens += 3
                                 function_tokens += len(encoding.encode(o))
                 function_tokens += 11
@@ -60,8 +62,7 @@ def num_tokens_from_functions(functions):
     return num_tokens
 
 
-def create_gpt_chat_completion(messages: List[dict], req_type, project,
-                               function_calls: FunctionCallSet = None):
+def create_gpt_chat_completion(messages: List[dict], req_type, project, function_calls: FunctionCallSet = None):
     """
     Called from:
       - AgentConvo.send_message() - these calls often have `function_calls`, usually from `pilot/const/function_calls.py`
@@ -80,19 +81,19 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     """
 
     gpt_data = {
-        'model': os.getenv('MODEL_NAME', 'gpt-4'),
-        'n': 1,
-        'temperature': 1,
-        'top_p': 1,
-        'presence_penalty': 0,
-        'frequency_penalty': 0,
-        'messages': messages,
-        'stream': True
+        "model": os.getenv("MODEL_NAME", "gpt-4"),
+        "n": 1,
+        "temperature": 1,
+        "top_p": 1,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "messages": messages,
+        "stream": True,
     }
 
     # delete some keys if using "OpenRouter" API
-    if os.getenv('ENDPOINT') == 'OPENROUTER':
-        keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'presence_penalty', 'frequency_penalty']
+    if os.getenv("ENDPOINT") == "OPENROUTER":
+        keys_to_delete = ["n", "max_tokens", "temperature", "top_p", "presence_penalty", "frequency_penalty"]
         for key in keys_to_delete:
             if key in gpt_data:
                 del gpt_data[key]
@@ -114,19 +115,19 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
         logger.error(f'The request to {os.getenv("ENDPOINT")} API failed: %s', e)
         print(f'The request to {os.getenv("ENDPOINT")} API failed. Here is the error message:')
         print(e)
-        return {}   # https://github.com/Pythagora-io/gpt-pilot/issues/130 - may need to revisit how we handle this
+        return {}  # https://github.com/Pythagora-io/gpt-pilot/issues/130 - may need to revisit how we handle this
 
 
 def delete_last_n_lines(n):
     for _ in range(n):
         # Move the cursor up one line
-        sys.stdout.write('\033[F')
+        sys.stdout.write("\033[F")
         # Clear the current line
-        sys.stdout.write('\033[K')
+        sys.stdout.write("\033[K")
 
 
 def count_lines_based_on_width(content, width):
-    lines_required = sum(len(line) // width + 1 for line in content.split('\n'))
+    lines_required = sum(len(line) // width + 1 for line in content.split("\n"))
     return lines_required
 
 
@@ -151,16 +152,16 @@ def get_tokens_in_messages_from_openai_error(error_message):
 
 def retry_on_exception(func):
     def update_error_count(args):
-        function_error_count = 1 if 'function_error' not in args[0] else args[0]['function_error_count'] + 1
-        args[0]['function_error_count'] = function_error_count
+        function_error_count = 1 if "function_error" not in args[0] else args[0]["function_error_count"] + 1
+        args[0]["function_error_count"] = function_error_count
         return function_error_count
 
     def set_function_error(args, err_str: str):
         logger.info(err_str)
 
-        args[0]['function_error'] = err_str
-        if 'function_buffer' in args[0]:
-            del args[0]['function_buffer']
+        args[0]["function_error"] = err_str
+        if "function_buffer" in args[0]:
+            del args[0]["function_buffer"]
 
     def wrapper(*args, **kwargs):
         wait_duration_ms = None
@@ -180,35 +181,35 @@ def retry_on_exception(func):
                     # - "Expecting ':' delimiter"
                     # - 'Expecting property name enclosed in double quotes'
                     # - 'Unterminated string starting at'
-                    if e.msg.startswith('Expecting') or e.msg == 'Unterminated string starting at':
-                        if e.msg == 'Expecting value' and len(e.doc) > e.pos:
+                    if e.msg.startswith("Expecting") or e.msg == "Unterminated string starting at":
+                        if e.msg == "Expecting value" and len(e.doc) > e.pos:
                             # Note: clean_json_response() should heal True/False boolean values
-                            err_str = re.split(r'[},\\n]', e.doc[e.pos:])[0]
-                            err_str = f'Invalid value: `{err_str}`'
+                            err_str = re.split(r"[},\\n]", e.doc[e.pos :])[0]
+                            err_str = f"Invalid value: `{err_str}`"
                         else:
                             # if e.msg == 'Unterminated string starting at' or len(e.doc) == e.pos:
-                            logger.info('Received incomplete JSON response from LLM. Asking for the rest...')
-                            args[0]['function_buffer'] = e.doc
-                            if 'function_error' in args[0]:
-                                del args[0]['function_error']
+                            logger.info("Received incomplete JSON response from LLM. Asking for the rest...")
+                            args[0]["function_buffer"] = e.doc
+                            if "function_error" in args[0]:
+                                del args[0]["function_error"]
                             continue
 
                     # TODO: (if it ever comes up) e.msg == 'Extra data' -> trim the response
                     # 'Invalid control character at', 'Invalid \\escape', 'Invalid control character',
                     # or `Expecting value` with `pos` before the end of `e.doc`
                     function_error_count = update_error_count(args)
-                    logger.warning('Received invalid character in JSON response from LLM. Asking to retry...')
-                    logger.info(f'  received: {e.doc}')
+                    logger.warning("Received invalid character in JSON response from LLM. Asking to retry...")
+                    logger.info(f"  received: {e.doc}")
                     set_function_error(args, err_str)
                     if function_error_count < 3:
                         continue
                 elif isinstance(e, ValidationError):
                     function_error_count = update_error_count(args)
-                    logger.warning('Received invalid JSON response from LLM. Asking to retry...')
+                    logger.warning("Received invalid JSON response from LLM. Asking to retry...")
                     # eg:
                     # json_path: '$.type'
                     # message:   "'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']"
-                    set_function_error(args, f'at {e.json_path} - {e.message}')
+                    set_function_error(args, f"at {e.json_path} - {e.message}")
                     # Attempt retry if the JSON schema is invalid, but avoid getting stuck in a loop
                     if function_error_count < 3:
                         continue
@@ -226,28 +227,25 @@ def retry_on_exception(func):
                         elif wait_duration_ms < 6000:
                             # waiting 6ms isn't usually long enough - exponential back-off until about 6 seconds
                             wait_duration_ms *= 2
-                        logger.debug(f'Rate limited. Waiting {wait_duration_ms}ms...')
+                        logger.debug(f"Rate limited. Waiting {wait_duration_ms}ms...")
                         time.sleep(wait_duration_ms / 1000)
                     continue
 
-                print(color_red('There was a problem with request to openai API:'))
+                print(color_red("There was a problem with request to openai API:"))
                 # spinner_stop(spinner)
                 print(err_str)
-                logger.error(f'There was a problem with request to openai API: {err_str}')
+                logger.error(f"There was a problem with request to openai API: {err_str}")
 
                 project = args[2]
                 user_message = styled_text(
                     project,
                     'Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type "no".',
-                    style=Style.from_dict({
-                        'question': '#FF0000 bold',
-                        'answer': '#FF910A bold'
-                    })
+                    style=Style.from_dict({"question": "#FF0000 bold", "answer": "#FF910A bold"}),
                 )
 
                 # TODO: take user's input into consideration - send to LLM?
                 # https://github.com/Pythagora-io/gpt-pilot/issues/122
-                if user_message != '':
+                if user_message != "":
                     return {}
 
     return wrapper
@@ -268,30 +266,30 @@ def stream_gpt_completion(data, req_type, project):
     except OSError:
         terminal_width = 50
     lines_printed = 2
-    gpt_response = ''
-    buffer = ''  # A buffer to accumulate incoming data
+    gpt_response = ""
+    buffer = ""  # A buffer to accumulate incoming data
     expecting_json = None
     received_json = False
 
-    if 'functions' in data:
-        expecting_json = data['functions']
-        if 'function_buffer' in data:
-            incomplete_json = get_prompt('utils/incomplete_json.prompt', {'received_json': data['function_buffer']})
-            data['messages'].append({'role': 'user', 'content': incomplete_json})
-            gpt_response = data['function_buffer']
+    if "functions" in data:
+        expecting_json = data["functions"]
+        if "function_buffer" in data:
+            incomplete_json = get_prompt("utils/incomplete_json.prompt", {"received_json": data["function_buffer"]})
+            data["messages"].append({"role": "user", "content": incomplete_json})
+            gpt_response = data["function_buffer"]
             received_json = True
-        elif 'function_error' in data:
-            invalid_json = get_prompt('utils/invalid_json.prompt', {'invalid_reason': data['function_error']})
-            data['messages'].append({'role': 'user', 'content': invalid_json})
+        elif "function_error" in data:
+            invalid_json = get_prompt("utils/invalid_json.prompt", {"invalid_reason": data["function_error"]})
+            data["messages"].append({"role": "user", "content": invalid_json})
             received_json = True
 
         # Don't send the `functions` parameter to Open AI, but don't remove it from `data` in case we need to retry
-        data = {key: value for key, value in data.items() if not key.startswith('function')}
+        data = {key: value for key, value in data.items() if not key.startswith("function")}
 
     def return_result(result_data, lines_printed):
         if buffer:
             lines_printed += count_lines_based_on_width(buffer, terminal_width)
-        logger.debug(f'lines printed: {lines_printed} - {terminal_width}')
+        logger.debug(f"lines printed: {lines_printed} - {terminal_width}")
 
         # delete_last_n_lines(lines_printed)  # TODO fix and test count_lines_based_on_width()
         return result_data
@@ -300,64 +298,58 @@ def stream_gpt_completion(data, req_type, project):
     # print(yellow("Stream response from OpenAI:"))
 
     # Configure for the selected ENDPOINT
-    model = os.getenv('MODEL_NAME', 'gpt-4')
-    endpoint = os.getenv('ENDPOINT')
+    model = os.getenv("MODEL_NAME", "gpt-4")
+    endpoint = os.getenv("ENDPOINT")
 
     # This will be set many times but we don't care, as there are no side-effects to it.
     telemetry.set("model", model)
     telemetry.inc("num_llm_requests")
 
-    logger.info(f'> Request model: {model}')
+    logger.info(f"> Request model: {model}")
     if logger.isEnabledFor(logging.DEBUG):
-        logger.debug('\n'.join([f"{message['role']}: {message['content']}" for message in data['messages']]))
+        logger.debug("\n".join([f"{message['role']}: {message['content']}" for message in data["messages"]]))
 
-    if endpoint == 'AZURE':
+    if endpoint == "AZURE":
         # If yes, get the AZURE_ENDPOINT from .ENV file
-        endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
-        headers = {
-            'Content-Type': 'application/json',
-            'api-key': get_api_key_or_throw('AZURE_API_KEY')
-        }
-    elif endpoint == 'OPENROUTER':
+        endpoint_url = (
+            os.getenv("AZURE_ENDPOINT") + "/openai/deployments/" + model + "/chat/completions?api-version=2023-05-15"
+        )
+        headers = {"Content-Type": "application/json", "api-key": get_api_key_or_throw("AZURE_API_KEY")}
+    elif endpoint == "OPENROUTER":
         # If so, send the request to the OpenRouter API endpoint
-        endpoint_url = os.getenv('OPENROUTER_ENDPOINT', 'https://openrouter.ai/api/v1/chat/completions')
+        endpoint_url = os.getenv("OPENROUTER_ENDPOINT", "https://openrouter.ai/api/v1/chat/completions")
         headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + get_api_key_or_throw('OPENROUTER_API_KEY'),
-            'HTTP-Referer': 'https://github.com/Pythagora-io/gpt-pilot',
-            'X-Title': 'GPT Pilot'
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + get_api_key_or_throw("OPENROUTER_API_KEY"),
+            "HTTP-Referer": "https://github.com/Pythagora-io/gpt-pilot",
+            "X-Title": "GPT Pilot",
         }
-        data['max_tokens'] = MAX_GPT_MODEL_TOKENS
-        data['model'] = model
+        data["max_tokens"] = MAX_GPT_MODEL_TOKENS
+        data["model"] = model
     else:
         # If not, send the request to the OpenAI endpoint
-        endpoint_url = os.getenv('OPENAI_ENDPOINT', 'https://api.openai.com/v1/chat/completions')
+        endpoint_url = os.getenv("OPENAI_ENDPOINT", "https://api.openai.com/v1/chat/completions")
         headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + get_api_key_or_throw('OPENAI_API_KEY')
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + get_api_key_or_throw("OPENAI_API_KEY"),
         }
-        data['model'] = model
+        data["model"] = model
 
-    response = requests.post(
-        endpoint_url,
-        headers=headers,
-        json=data,
-        stream=True
-    )
+    response = requests.post(endpoint_url, headers=headers, json=data, stream=True)
 
     if response.status_code != 200:
-        project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], response.text)
-        logger.info(f'problem with request (status {response.status_code}): {response.text}')
+        project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data["messages"], response.text)
+        logger.info(f"problem with request (status {response.status_code}): {response.text}")
         raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
     # function_calls = {'name': '', 'arguments': ''}
 
     for line in response.iter_lines():
         # Ignore keep-alive new lines
-        if line and line != b': OPENROUTER PROCESSING':
+        if line and line != b": OPENROUTER PROCESSING":
             line = line.decode("utf-8")  # decode the bytes to string
 
-            if line.startswith('data: '):
+            if line.startswith("data: "):
                 line = line[6:]  # remove the 'data: ' prefix
 
             # Check if the line is "[DONE]" before trying to parse it as JSON
@@ -367,23 +359,23 @@ def stream_gpt_completion(data, req_type, project):
             try:
                 json_line = json.loads(line)
 
-                if len(json_line['choices']) == 0:
+                if len(json_line["choices"]) == 0:
                     continue
 
-                if 'error' in json_line:
-                    logger.error(f'Error in LLM response: {json_line}')
+                if "error" in json_line:
+                    logger.error(f"Error in LLM response: {json_line}")
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
 
-                choice = json_line['choices'][0]
+                choice = json_line["choices"][0]
 
                 # if 'finish_reason' in choice and choice['finish_reason'] == 'function_call':
                 #     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
                 #     return return_result({'function_calls': function_calls}, lines_printed)
 
-                json_line = choice['delta']
+                json_line = choice["delta"]
 
             except json.JSONDecodeError as e:
-                logger.error(f'Unable to decode line: {line} {e.msg}')
+                logger.error(f"Unable to decode line: {line} {e.msg}")
                 continue  # skip to the next line
 
             # handle the streaming response
@@ -396,13 +388,13 @@ def stream_gpt_completion(data, req_type, project):
             #         function_calls['arguments'] += json_line['function_call']['arguments']
             #         print(json_line['function_call']['arguments'], type='stream', end='', flush=True)
 
-            if 'content' in json_line:
-                content = json_line.get('content')
+            if "content" in json_line:
+                content = json_line.get("content")
                 if content:
                     buffer += content  # accumulate the data
 
                     # If you detect a natural breakpoint (e.g., line break or end of a response object), print & count:
-                    if buffer.endswith('\n'):
+                    if buffer.endswith("\n"):
                         if expecting_json and not received_json:
                             received_json = assert_json_response(buffer, lines_printed > 2)
 
@@ -411,16 +403,16 @@ def stream_gpt_completion(data, req_type, project):
                         buffer = ""  # reset the buffer
 
                     gpt_response += content
-                    print(content, type='stream', end='', flush=True)
+                    print(content, type="stream", end="", flush=True)
 
-    print('\n', type='stream')
+    print("\n", type="stream")
 
     # if function_calls['arguments'] != '':
     #     logger.info(f'Response via function call: {function_calls["arguments"]}')
     #     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
     #     return return_result({'function_calls': function_calls}, lines_printed)
-    logger.info('<<<<<<<<<< LLM Response <<<<<<<<<<\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', gpt_response)
-    project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], gpt_response)
+    logger.info("<<<<<<<<<< LLM Response <<<<<<<<<<\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<", gpt_response)
+    project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data["messages"], gpt_response)
 
     if expecting_json:
         gpt_response = clean_json_response(gpt_response)
@@ -429,7 +421,7 @@ def stream_gpt_completion(data, req_type, project):
         project.dot_pilot_gpt.log_chat_completion_json(endpoint, model, req_type, expecting_json, gpt_response)
 
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
-    return return_result({'text': new_code}, lines_printed)
+    return return_result({"text": new_code}, lines_printed)
 
 
 def get_api_key_or_throw(env_key: str):
@@ -440,25 +432,25 @@ def get_api_key_or_throw(env_key: str):
 
 
 def assert_json_response(response: str, or_fail=True) -> bool:
-    if re.match(r'.*(```(json)?|{|\[)', response):
+    if re.match(r".*(```(json)?|{|\[)", response):
         return True
     elif or_fail:
-        logger.error(f'LLM did not respond with JSON: {response}')
-        raise ValueError('LLM did not respond with JSON')
+        logger.error(f"LLM did not respond with JSON: {response}")
+        raise ValueError("LLM did not respond with JSON")
     else:
         return False
 
 
 def clean_json_response(response: str) -> str:
-    response = re.sub(r'^.*```json\s*', '', response, flags=re.DOTALL)
-    response = re.sub(r': ?True(,)?$', r':true\1', response, flags=re.MULTILINE)
-    response = re.sub(r': ?False(,)?$', r':false\1', response, flags=re.MULTILINE)
-    return response.strip('` \n')
+    response = re.sub(r"^.*```json\s*", "", response, flags=re.DOTALL)
+    response = re.sub(r": ?True(,)?$", r":true\1", response, flags=re.MULTILINE)
+    response = re.sub(r": ?False(,)?$", r":false\1", response, flags=re.MULTILINE)
+    return response.strip("` \n")
 
 
 def assert_json_schema(response: str, functions: list[FunctionType]) -> True:
     for function in functions:
-        schema = function['parameters']
+        schema = function["parameters"]
         parsed = json.loads(response)
         validate(parsed, schema)
         return True

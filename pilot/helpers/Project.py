@@ -3,33 +3,43 @@ import os
 import re
 from typing import Tuple
 
-from const.messages import CHECK_AND_CONTINUE
-from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_green
-from const.common import IGNORE_FOLDERS, STEPS
-from database.database import delete_unconnected_steps_from, delete_all_app_development_data, update_app_status
-from const.ipc import MESSAGE_TYPE
-from prompts.prompts import ask_user
-from helpers.exceptions.TokenLimitError import TokenLimitError
-from utils.questionary import styled_text
-from helpers.files import get_files_content, clear_directory, update_file
-from helpers.cli import build_directory_tree
-from helpers.agents.TechLead import TechLead
-from helpers.agents.Developer import Developer
-from helpers.agents.Architect import Architect
-from helpers.agents.ProductOwner import ProductOwner
+from pilot.const.common import IGNORE_FOLDERS, STEPS
+from pilot.const.ipc import MESSAGE_TYPE
+from pilot.const.messages import CHECK_AND_CONTINUE
+from pilot.database.database import delete_all_app_development_data, delete_unconnected_steps_from, update_app_status
+from pilot.database.models.development_steps import DevelopmentSteps
+from pilot.database.models.file_snapshot import FileSnapshot
+from pilot.database.models.files import File
+from pilot.helpers.agents.Architect import Architect
+from pilot.helpers.agents.Developer import Developer
+from pilot.helpers.agents.ProductOwner import ProductOwner
+from pilot.helpers.agents.TechLead import TechLead
+from pilot.helpers.cli import build_directory_tree
+from pilot.helpers.exceptions.TokenLimitError import TokenLimitError
+from pilot.helpers.files import clear_directory, get_files_content, update_file
+from pilot.logger.logger import logger
+from pilot.prompts.prompts import ask_user
+from pilot.utils.dot_gpt_pilot import DotGptPilot
+from pilot.utils.questionary import styled_text
+from pilot.utils.style import color_cyan, color_green, color_white_bold, color_yellow_bold
+from pilot.utils.telemetry import telemetry
 
-from database.models.development_steps import DevelopmentSteps
-from database.models.file_snapshot import FileSnapshot
-from database.models.files import File
-from logger.logger import logger
-from utils.dot_gpt_pilot import DotGptPilot
-
-from utils.telemetry import telemetry
 
 class Project:
-    def __init__(self, args, name=None, project_description=None, clarifications=None, user_stories=None,
-                 user_tasks=None, architecture=None, development_plan=None, current_step=None, ipc_client_instance=None,
-                 enable_dot_pilot_gpt=True):
+    def __init__(
+        self,
+        args,
+        name=None,
+        project_description=None,
+        clarifications=None,
+        user_stories=None,
+        user_tasks=None,
+        architecture=None,
+        development_plan=None,
+        current_step=None,
+        ipc_client_instance=None,
+        enable_dot_pilot_gpt=True,
+    ):
         """
         Initialize a project.
 
@@ -48,12 +58,12 @@ class Project:
         self.command_runs_count = 0
         self.user_inputs_count = 0
         self.checkpoints = {
-            'last_user_input': None,
-            'last_command_run': None,
-            'last_development_step': None,
+            "last_user_input": None,
+            "last_command_run": None,
+            "last_development_step": None,
         }
         # TODO make flexible
-        self.root_path = ''
+        self.root_path = ""
         self.skip_until_dev_step = None
         self.skip_steps = None
         self.main_prompt = None
@@ -63,7 +73,7 @@ class Project:
 
         # self.restore_files({dev_step_id_to_start_from})
 
-        self.finished = args.get('status') == 'finished'
+        self.finished = args.get("status") == "finished"
         self.current_step = current_step
         self.name = name
         self.project_description = project_description
@@ -103,40 +113,39 @@ class Project:
             return
 
         # TODO move to constructor eventually
-        if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
+        if self.args["step"] is not None and STEPS.index(self.args["step"]) < STEPS.index("coding"):
             clear_directory(self.root_path)
-            delete_all_app_development_data(self.args['app_id'])
+            delete_all_app_development_data(self.args["app_id"])
             self.skip_steps = False
 
-        if 'skip_until_dev_step' in self.args:
-            self.skip_until_dev_step = self.args['skip_until_dev_step']
-            if self.args['skip_until_dev_step'] == '0':
+        if "skip_until_dev_step" in self.args:
+            self.skip_until_dev_step = self.args["skip_until_dev_step"]
+            if self.args["skip_until_dev_step"] == "0":
                 clear_directory(self.root_path)
-                delete_all_app_development_data(self.args['app_id'])
+                delete_all_app_development_data(self.args["app_id"])
                 self.skip_steps = False
             elif self.skip_until_dev_step is not None:
-                should_overwrite_files = ''
-                while should_overwrite_files.lower() not in ['y', 'n']:
+                should_overwrite_files = ""
+                while should_overwrite_files.lower() not in ["y", "n"]:
                     should_overwrite_files = styled_text(
                         self,
                         f'Do you want to overwrite the dev step {self.args["skip_until_dev_step"]} code with system changes? Type y/n',
-                        ignore_user_input_count=True
+                        ignore_user_input_count=True,
                     )
 
-                    logger.info('should_overwrite_files: %s', should_overwrite_files)
-                    if should_overwrite_files == 'n':
+                    logger.info("should_overwrite_files: %s", should_overwrite_files)
+                    if should_overwrite_files == "n":
                         break
-                    elif should_overwrite_files == 'y':
+                    elif should_overwrite_files == "y":
                         FileSnapshot.delete().where(
-                            FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
+                            FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step
+                        ).execute()
                         self.save_files_snapshot(self.skip_until_dev_step)
                         break
         # TODO END
 
         self.dot_pilot_gpt.write_project(self)
-        print(json.dumps({
-            "project_stage": "coding"
-        }), type='info')
+        print(json.dumps({"project_stage": "coding"}), type="info")
         self.developer.start_coding()
 
     def finish(self):
@@ -144,11 +153,14 @@ class Project:
         Finish the project.
         """
         while True:
-            feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
-                                                 "If yes, describe it here and if no, just press ENTER",
-                                           require_some_input=False)
+            feature_description = ask_user(
+                self,
+                "Project is finished! Do you want to add any features or changes? "
+                "If yes, describe it here and if no, just press ENTER",
+                require_some_input=False,
+            )
 
-            if feature_description == '':
+            if feature_description == "":
                 return
 
             self.tech_lead.create_feature_plan(feature_description)
@@ -180,7 +192,7 @@ class Project:
             dict: The directory tree of tests.
         """
         # TODO remove hardcoded path
-        return build_directory_tree(self.root_path + '/tests', ignore=IGNORE_FOLDERS)
+        return build_directory_tree(self.root_path + "/tests", ignore=IGNORE_FOLDERS)
 
     def get_all_coded_files(self):
         """
@@ -189,16 +201,16 @@ class Project:
         Returns:
             list: A list of coded files.
         """
-        files = File.select().where(File.app_id == self.args['app_id'])
+        files = File.select().where(File.app_id == self.args["app_id"])
 
         # TODO temoprary fix to eliminate files that are not in the project
         files = [file for file in files if len(FileSnapshot.select().where(FileSnapshot.file_id == file.id)) > 0]
         # TODO END
 
-        files = self.get_files([file.path + '/' + file.name for file in files])
+        files = self.get_files([file.path + "/" + file.name for file in files])
 
         # TODO temoprary fix to eliminate files that are not in the project
-        files = [file for file in files if file['content'] != '']
+        files = [file for file in files if file["content"] != ""]
         # TODO END
 
         return files
@@ -219,14 +231,11 @@ class Project:
             try:
                 name = os.path.basename(file_path)
                 relative_path, full_path = self.get_full_file_path(file_path, name)
-                file_content = open(full_path, 'r').read()
+                file_content = open(full_path, "r").read()
             except OSError:
-                file_content = ''
+                file_content = ""
 
-            files_with_content.append({
-                "path": file_path,
-                "content": file_content
-            })
+            files_with_content.append({"path": file_path, "content": file_content})
         return files_with_content
 
     def save_file(self, data):
@@ -236,47 +245,51 @@ class Project:
         Args:
             data: { name: 'hello.py', path: 'path/to/hello.py', content: 'print("Hello!")' }
         """
-        name = data['name'] if 'name' in data and data['name'] != '' else os.path.basename(data['path'])
-        path = data['path'] if 'path' in data else name
+        name = data["name"] if "name" in data and data["name"] != "" else os.path.basename(data["path"])
+        path = data["path"] if "path" in data else name
 
         path, full_path = self.get_full_file_path(path, name)
-        update_file(full_path, data['content'])
+        update_file(full_path, data["content"])
         if full_path not in self.files:
             self.files.append(full_path)
 
-        (File.insert(app=self.app, path=path, name=name, full_path=full_path)
-         .on_conflict(
-            conflict_target=[File.app, File.name, File.path],
-            preserve=[],
-            update={'name': name, 'path': path, 'full_path': full_path})
-         .execute())
+        (
+            File.insert(app=self.app, path=path, name=name, full_path=full_path)
+            .on_conflict(
+                conflict_target=[File.app, File.name, File.path],
+                preserve=[],
+                update={"name": name, "path": path, "full_path": full_path},
+            )
+            .execute()
+        )
 
     def get_full_file_path(self, file_path: str, file_name: str) -> Tuple[str, str]:
         file_name = os.path.basename(file_name)
 
         if file_path.startswith(self.root_path):
-            file_path = file_path.replace(self.root_path, '')
+            file_path = file_path.replace(self.root_path, "")
 
         if file_path == file_name:
-            file_path = ''
+            file_path = ""
         else:
-            are_windows_paths = '\\' in file_path or '\\' in file_name or '\\' in self.root_path
+            are_windows_paths = "\\" in file_path or "\\" in file_name or "\\" in self.root_path
             if are_windows_paths:
-                file_path = file_path.replace('\\', '/')
+                file_path = file_path.replace("\\", "/")
 
             # Force all paths to be relative to the workspace
-            file_path = re.sub(r'^(\w+:/|[/~.]+)', '', file_path, 1)
+            file_path = re.sub(r"^(\w+:/|[/~.]+)", "", file_path, 1)
 
             # file_path should not include the file name
             if file_path == file_name:
-                file_path = ''
-            elif file_path.endswith('/' + file_name):
-                file_path = file_path.replace('/' + file_name, '')
-            elif file_path.endswith('/'):
+                file_path = ""
+            elif file_path.endswith("/" + file_name):
+                file_path = file_path.replace("/" + file_name, "")
+            elif file_path.endswith("/"):
                 file_path = file_path[:-1]
 
-        absolute_path = self.root_path + '/' + file_name if file_path == '' \
-            else self.root_path + '/' + file_path + '/' + file_name
+        absolute_path = (
+            self.root_path + "/" + file_name if file_path == "" else self.root_path + "/" + file_path + "/" + file_name
+        )
 
         return file_path, absolute_path
 
@@ -289,18 +302,18 @@ class Project:
             # TODO this can be optimized so we don't go to the db each time
             file_in_db, created = File.get_or_create(
                 app=self.app,
-                name=file['name'],
-                path=file['path'],
-                full_path=file['full_path'],
+                name=file["name"],
+                path=file["path"],
+                full_path=file["full_path"],
             )
 
             file_snapshot, created = FileSnapshot.get_or_create(
                 app=self.app,
                 development_step=development_step,
                 file=file_in_db,
-                defaults={'content': file.get('content', '')}
+                defaults={"content": file.get("content", "")},
             )
-            file_snapshot.content = file['content']
+            file_snapshot.content = file["content"]
             file_snapshot.save()
 
     def restore_files(self, development_step_id):
@@ -314,34 +327,32 @@ class Project:
                 self.files.append(file_snapshot.file.full_path)
 
     def delete_all_steps_except_current_branch(self):
-        delete_unconnected_steps_from(self.checkpoints['last_development_step'], 'previous_step')
-        delete_unconnected_steps_from(self.checkpoints['last_command_run'], 'previous_step')
-        delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
+        delete_unconnected_steps_from(self.checkpoints["last_development_step"], "previous_step")
+        delete_unconnected_steps_from(self.checkpoints["last_command_run"], "previous_step")
+        delete_unconnected_steps_from(self.checkpoints["last_user_input"], "previous_step")
 
     def ask_for_human_intervention(self, message, description=None, cbs={}, convo=None, is_root_task=False):
-        answer = ''
+        answer = ""
         question = color_yellow_bold(message)
 
         if description is not None:
-            question += '\n' + '-' * 100 + '\n' + color_white_bold(description) + '\n' + '-' * 100 + '\n'
+            question += "\n" + "-" * 100 + "\n" + color_white_bold(description) + "\n" + "-" * 100 + "\n"
 
         reset_branch_id = None if convo is None else convo.save_branch()
 
-        while answer.lower() != 'continue':
-            print('continue', type='button')
-            answer = ask_user(self, CHECK_AND_CONTINUE,
-                              require_some_input=False,
-                              hint=question)
+        while answer.lower() != "continue":
+            print("continue", type="button")
+            answer = ask_user(self, CHECK_AND_CONTINUE, require_some_input=False, hint=question)
 
             try:
                 if answer.lower() in cbs:
                     return cbs[answer.lower()](convo)
-                elif answer != '':
-                    return {'user_input': answer}
+                elif answer != "":
+                    return {"user_input": answer}
             except TokenLimitError as e:
-                if is_root_task and answer.lower() not in cbs and answer != '':
+                if is_root_task and answer.lower() not in cbs and answer != "":
                     convo.load_branch(reset_branch_id)
-                    return {'user_input': answer}
+                    return {"user_input": answer}
                 else:
                     raise e
 
@@ -349,9 +360,11 @@ class Project:
         if self.ipc_client_instance is None or self.ipc_client_instance.client is None:
             print(text)
         else:
-            self.ipc_client_instance.send({
-                'type': MESSAGE_TYPE[message_type],
-                'content': str(text),
-            })
-            if message_type == MESSAGE_TYPE['user_input_request']:
+            self.ipc_client_instance.send(
+                {
+                    "type": MESSAGE_TYPE[message_type],
+                    "content": str(text),
+                }
+            )
+            if message_type == MESSAGE_TYPE["user_input_request"]:
                 return self.ipc_client_instance.listen()

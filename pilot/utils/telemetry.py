@@ -1,12 +1,12 @@
-from logging import getLogger
 import sys
 import time
+from logging import getLogger
 from typing import Any
 from uuid import uuid4
 
 import requests
 
-from .settings import settings, version, config_path
+from .settings import config_path, settings, version
 
 log = getLogger(__name__)
 
@@ -59,8 +59,7 @@ class Telemetry:
 
         if self.enabled:
             log.debug(
-                f"Anonymous telemetry enabled (id={self.telemetry_id}), "
-                f"configure or disable it in {config_path}"
+                f"Anonymous telemetry enabled (id={self.telemetry_id}), " f"configure or disable it in {config_path}"
             )
 
     def clear_data(self):
@@ -102,6 +101,7 @@ class Telemetry:
         if sys.platform == "linux":
             try:
                 import distro
+
                 self.data["linux_distro"] = distro.name(pretty=True)
             except Exception as err:
                 log.debug(f"Error getting Linux distribution info: {err}", exc_info=True)
@@ -122,9 +122,7 @@ class Telemetry:
         self.telemetry_id = f"telemetry-{uuid4()}"
         self.endpoint = self.DEFAULT_ENDPOINT
         self.enabled = True
-        log.debug(
-            f"Telemetry.setup(): setting up anonymous telemetry (id={self.telemetry_id})"
-        )
+        log.debug(f"Telemetry.setup(): setting up anonymous telemetry (id={self.telemetry_id})")
 
         settings.telemetry = {
             "id": self.telemetry_id,
@@ -145,9 +143,7 @@ class Telemetry:
             return
 
         if name not in self.data:
-            log.error(
-                f"Telemetry.record(): ignoring unknown telemetry data field: {name}"
-            )
+            log.error(f"Telemetry.record(): ignoring unknown telemetry data field: {name}")
             return
 
         self.data[name] = value
@@ -165,9 +161,7 @@ class Telemetry:
             return
 
         if name not in self.data:
-            log.error(
-                f"Telemetry.increase(): ignoring unknown telemetry data field: {name}"
-            )
+            log.error(f"Telemetry.increase(): ignoring unknown telemetry data field: {name}")
             return
 
         self.data[name] += value
@@ -196,7 +190,7 @@ class Telemetry:
         self.end_time = time.time()
         self.data["elapsed_time"] = self.end_time - self.start_time
 
-    def send(self, event:str = "pilot-telemetry"):
+    def send(self, event: str = "pilot-telemetry"):
         """
         Send telemetry data to the phone-home endpoint.
 
@@ -218,15 +212,11 @@ class Telemetry:
             "data": self.data,
         }
 
-        log.debug(
-            f"Telemetry.send(): sending anonymous telemetry data to {self.endpoint}"
-        )
+        log.debug(f"Telemetry.send(): sending anonymous telemetry data to {self.endpoint}")
         try:
             requests.post(self.endpoint, json=payload)
         except Exception as e:
-            log.error(
-                f"Telemetry.send(): failed to send telemetry data: {e}", exc_info=True
-            )
+            log.error(f"Telemetry.send(): failed to send telemetry data: {e}", exc_info=True)
         finally:
             self.clear_data()
 

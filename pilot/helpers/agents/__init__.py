@@ -1,4 +1,4 @@
-from .Architect import Architect, ARCHITECTURE_STEP
-from .CodeMonkey import CodeMonkey, IMPLEMENT_CHANGES, GET_FILES
-from .Developer import Developer, ENVIRONMENT_SETUP_STEP
+from .Architect import ARCHITECTURE_STEP, Architect
+from .CodeMonkey import GET_FILES, IMPLEMENT_CHANGES, CodeMonkey
+from .Developer import ENVIRONMENT_SETUP_STEP, Developer
 from .TechLead import TechLead

@@ -1,11 +1,11 @@
 import platform
 import uuid
 
-from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
-from const.function_calls import DEBUG_STEPS_BREAKDOWN
-from helpers.exceptions.TokenLimitError import TokenLimitError
-from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
-from logger.logger import logger
+from pilot.const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
+from pilot.const.function_calls import DEBUG_STEPS_BREAKDOWN
+from pilot.helpers.exceptions.TokenLimitError import TokenLimitError
+from pilot.helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
+from pilot.logger.logger import logger
 
 
 class Debugger:
@@ -27,7 +27,7 @@ class Debugger:
         Returns:
             bool: True if debugging was successful, False otherwise.
         """
-        logger.info('Debugging %s', command)
+        logger.info("Debugging %s", command)
         self.recursion_layer += 1
         if self.recursion_layer > MAX_RECUSION_LAYER:
             self.recursion_layer = 0
@@ -37,27 +37,29 @@ class Debugger:
         convo.save_branch(function_uuid)
         success = False
 
-        for i in range(MAX_COMMAND_DEBUG_TRIES):
+        for _ in range(MAX_COMMAND_DEBUG_TRIES):
             if success:
                 break
 
             convo.load_branch(function_uuid)
 
-            llm_response = convo.send_message('dev_ops/debug.prompt',
+            llm_response = convo.send_message(
+                "dev_ops/debug.prompt",
                 {
-                    'command': command['command'] if command is not None else None,
-                    'user_input': user_input,
-                    'issue_description': issue_description,
-                    'os': platform.system(),
-                    'context': convo.to_context_prompt()
+                    "command": command["command"] if command is not None else None,
+                    "user_input": user_input,
+                    "issue_description": issue_description,
+                    "os": platform.system(),
+                    "context": convo.to_context_prompt(),
                 },
-                DEBUG_STEPS_BREAKDOWN)
+                DEBUG_STEPS_BREAKDOWN,
+            )
 
             try:
                 while True:
-                    logger.info('Thoughts: ' + llm_response['thoughts'])
-                    logger.info('Reasoning: ' + llm_response['reasoning'])
-                    steps = llm_response['steps']
+                    logger.info("Thoughts: " + llm_response["thoughts"])
+                    logger.info("Reasoning: " + llm_response["reasoning"])
+                    steps = llm_response["steps"]
 
                     # TODO refactor to nicely get the developer agent
                     result = self.agent.project.developer.execute_task(
@@ -66,22 +68,24 @@ class Debugger:
                         test_command=command,
                         test_after_code_changes=True,
                         continue_development=False,
-                        is_root_task=is_root_task)
+                        is_root_task=is_root_task,
+                    )
 
-                    if 'step_index' in result:
+                    if "step_index" in result:
                         # result['running_processes'] = running_processes
-                        result['os'] = platform.system()
-                        step_index = result['step_index']
-                        result['completed_steps'] = steps[:step_index]
-                        result['current_step'] = steps[step_index]
-                        result['next_steps'] = steps[step_index + 1:]
+                        result["os"] = platform.system()
+                        step_index = result["step_index"]
+                        result["completed_steps"] = steps[:step_index]
+                        result["current_step"] = steps[step_index]
+                        result["next_steps"] = steps[step_index + 1 :]
 
                         # Remove the previous debug plan and build a new one
                         convo.remove_last_x_messages(1)
-                        llm_response = convo.send_message('development/task/update_task.prompt', result,
-                                                               DEBUG_STEPS_BREAKDOWN)
+                        llm_response = convo.send_message(
+                            "development/task/update_task.prompt", result, DEBUG_STEPS_BREAKDOWN
+                        )
                     else:
-                        success = result['success']
+                        success = result["success"]
                         break
 
             except TokenLimitError as e:
@@ -90,7 +94,7 @@ class Debugger:
                     raise e
                 else:
                     continue
-            
+
             # if not success:
             #     # TODO explain better how should the user approach debugging
             #     # we can copy the entire convo to clipboard so they can paste it in the playground

@@ -1,8 +1,8 @@
 import json
+import sys
 from logging import getLogger
 from os import getenv, makedirs
 from pathlib import Path
-import sys
 from typing import Any, Optional
 
 from dotenv import load_dotenv
@@ -176,9 +176,7 @@ class Loader:
             with open(self.config_path, "r", encoding="utf-8") as fp:
                 return json.load(fp)
         except Exception as e:
-            log.error(
-                f"Error loading config file {self.config_path}: {e}", exc_info=True
-            )
+            log.error(f"Error loading config file {self.config_path}: {e}", exc_info=True)
             return {}
 
     def _save_config(self, config: dict[str, Any]):

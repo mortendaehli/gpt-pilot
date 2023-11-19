@@ -1,4 +1,5 @@
 import json
+
 from peewee import TextField
 
 

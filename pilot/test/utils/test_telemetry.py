@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
-
-from utils.telemetry import Telemetry
+from pilot.utils.telemetry import Telemetry
 
 
 @patch("utils.telemetry.settings")
@@ -41,10 +40,7 @@ def test_telemetry_constructor_logging_enabled(mock_settings, caplog):
         "enabled": True,
     }
     Telemetry()
-    assert (
-        "Anonymous telemetry enabled (id=test-id), configure or disable it in /path/to/config"
-        in caplog.text
-    )
+    assert "Anonymous telemetry enabled (id=test-id), configure or disable it in /path/to/config" in caplog.text
 
 
 @patch("utils.telemetry.sys.platform", "test_platform")

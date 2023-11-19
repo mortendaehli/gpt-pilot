@@ -1,11 +1,11 @@
 import logging
 
-from peewee import ForeignKeyField, BlobField
+from peewee import BlobField, ForeignKeyField
 
-from database.models.components.base_models import BaseModel
-from database.models.development_steps import DevelopmentSteps
-from database.models.app import App
-from database.models.files import File
+from pilot.database.models.app import App
+from pilot.database.models.components.base_models import BaseModel
+from pilot.database.models.development_steps import DevelopmentSteps
+from pilot.database.models.files import File
 
 log = logging.getLogger(__name__)
 
@@ -34,13 +34,11 @@ class SmartBlobField(BlobField):
 
 
 class FileSnapshot(BaseModel):
-    app = ForeignKeyField(App, on_delete='CASCADE')
-    development_step = ForeignKeyField(DevelopmentSteps, backref='files', on_delete='CASCADE')
-    file = ForeignKeyField(File, on_delete='CASCADE', null=True)
+    app = ForeignKeyField(App, on_delete="CASCADE")
+    development_step = ForeignKeyField(DevelopmentSteps, backref="files", on_delete="CASCADE")
+    file = ForeignKeyField(File, on_delete="CASCADE", null=True)
     content = SmartBlobField()
 
     class Meta:
-        table_name = 'file_snapshot'
-        indexes = (
-            (('development_step', 'file'), True),
-        )
+        table_name = "file_snapshot"
+        indexes = ((("development_step", "file"), True),)

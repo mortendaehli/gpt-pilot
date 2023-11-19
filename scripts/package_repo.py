@@ -2,16 +2,14 @@ import os
 import shutil
 import zipfile
 
+
 def main():
     # Define the base directory (one level up from /scripts)
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     repo_path = os.path.abspath(base_dir)
 
     # Files to exclude from the repo temporarily while packaging
-    files_to_exclude = [
-        "pilot/.env",
-        "pilot/gpt-pilot"
-    ]
+    files_to_exclude = ["pilot/.env", "pilot/gpt-pilot"]
 
     # Step 1: Move excluded files to /tmp
     tmp_excluded_paths = []
@@ -30,14 +28,14 @@ def main():
         "docker-compose.yml",
         "LICENSE",
         "README.md",
-        "requirements.txt"
+        "requirements.txt",
     ]
 
     # Step 2: Package the specified items using Python's zipfile module
     parent_directory = os.path.dirname(base_dir)
     archive_path = os.path.join(parent_directory, "gpt-pilot-packaged.zip")
 
-    with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as archive:
+    with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as archive:
         for item in items_to_package:
             item_path = os.path.join(repo_path, item)
             if os.path.isfile(item_path):
@@ -53,6 +51,7 @@ def main():
     for tmp_path, orig_path in tmp_excluded_paths:
         if os.path.exists(tmp_path):
             shutil.move(tmp_path, orig_path)
+
 
 if __name__ == "__main__":
     main()

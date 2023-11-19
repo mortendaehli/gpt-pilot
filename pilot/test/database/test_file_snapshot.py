@@ -1,22 +1,15 @@
 from base64 import b64decode
 
-from peewee import SqliteDatabase, PostgresqlDatabase
 import pytest
+from peewee import PostgresqlDatabase, SqliteDatabase
 
-from database.config import (
-    DATABASE_TYPE,
-    DB_NAME,
-    DB_HOST,
-    DB_PORT,
-    DB_USER,
-    DB_PASSWORD,
-)
-from database.database import TABLES
-from database.models.user import User
-from database.models.app import App
-from database.models.file_snapshot import FileSnapshot
-from database.models.files import File
-from database.models.development_steps import DevelopmentSteps
+from pilot.database.config import DATABASE_TYPE, DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
+from pilot.database.database import TABLES
+from pilot.database.models.app import App
+from pilot.database.models.development_steps import DevelopmentSteps
+from pilot.database.models.file_snapshot import FileSnapshot
+from pilot.database.models.files import File
+from pilot.database.models.user import User
 
 EMPTY_PNG = b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
@@ -37,9 +30,7 @@ def database():
     """
     if DATABASE_TYPE == "postgres":
         if not DB_NAME:
-            raise ValueError(
-                "PostgreSQL database name (DB_NAME) environment variable not set"
-            )
+            raise ValueError("PostgreSQL database name (DB_NAME) environment variable not set")
         db = PostgresqlDatabase(
             DB_NAME,
             host=DB_HOST,
@@ -83,7 +74,7 @@ def test_create_tables(database):
     """
     Test that database tables are created for all the models.
     """
-    from database.database import TABLES
+    from pilot.database.database import TABLES
 
     with database:
         tables = database.get_tables()

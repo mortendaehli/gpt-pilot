@@ -1,3 +1,5 @@
+// noinspection SyntaxError
+
 let messages = {{messages}}
 
 function sleep(ms) {
@@ -36,7 +38,7 @@ async function fill_playground(messages) {
     for (let i = 0; i < other_messages.length; i++) {
         let all_elements = document.querySelectorAll('.text-input-with-focus');
         let last_user_document = all_elements[i];
-        
+
         textarea_to_fill = last_user_document.querySelector('textarea');
         textarea_to_fill.focus();
         document.execCommand("insertText", false, other_messages[i].content);

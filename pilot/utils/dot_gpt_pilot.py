@@ -1,12 +1,13 @@
 import json
 import os
-import yaml
 from datetime import datetime
+
+import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
 
-USE_GPTPILOT_FOLDER = os.getenv('USE_GPTPILOT_FOLDER') == 'true'
+USE_GPTPILOT_FOLDER = os.getenv("USE_GPTPILOT_FOLDER") == "true"
 
 
 # TODO: Parse files from the `.gpt-pilot` directory to resume a project - `user_stories` may have changed - include checksums for sections which may need to be reprocessed.
@@ -15,17 +16,18 @@ class DotGptPilot:
     """
     Manages the `.gpt-pilot` directory.
     """
+
     def __init__(self, log_chat_completions: bool = True):
         if not USE_GPTPILOT_FOLDER:
             return
         self.log_chat_completions = log_chat_completions
-        self.dot_gpt_pilot_path = self.with_root_path('~', create=False)
+        self.dot_gpt_pilot_path = self.with_root_path("~", create=False)
         self.chat_log_path = self.chat_log_folder(None)
 
     def with_root_path(self, root_path: str, create=True):
         if not USE_GPTPILOT_FOLDER:
             return
-        dot_gpt_pilot_path = os.path.expanduser(os.path.join(root_path, '.gpt-pilot'))
+        dot_gpt_pilot_path = os.path.expanduser(os.path.join(root_path, ".gpt-pilot"))
         self.dot_gpt_pilot_path = dot_gpt_pilot_path
 
         # Create the `.gpt-pilot` directory if required.
@@ -37,9 +39,9 @@ class DotGptPilot:
     def chat_log_folder(self, task):
         if not USE_GPTPILOT_FOLDER:
             return
-        chat_log_path = os.path.join(self.dot_gpt_pilot_path, 'chat_log')
+        chat_log_path = os.path.join(self.dot_gpt_pilot_path, "chat_log")
         if task is not None:
-            chat_log_path = os.path.join(chat_log_path, 'task_' + str(task))
+            chat_log_path = os.path.join(chat_log_path, "task_" + str(task))
 
         os.makedirs(chat_log_path, exist_ok=True)
         self.chat_log_path = chat_log_path
@@ -49,13 +51,13 @@ class DotGptPilot:
         if not USE_GPTPILOT_FOLDER:
             return
         if self.log_chat_completions:
-            time = datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
-            with open(os.path.join(self.chat_log_path, f'{time}-{req_type}.yaml'), 'w') as file:
+            time = datetime.now().strftime("%Y-%m-%d_%H_%M_%S")
+            with open(os.path.join(self.chat_log_path, f"{time}-{req_type}.yaml"), "w") as file:
                 data = {
-                    'endpoint': endpoint,
-                    'model': model,
-                    'messages': messages,
-                    'response': response,
+                    "endpoint": endpoint,
+                    "model": model,
+                    "messages": messages,
+                    "response": response,
                 }
 
                 yaml.safe_dump(data, file, width=120, indent=2, default_flow_style=False, sort_keys=False)
@@ -64,14 +66,14 @@ class DotGptPilot:
         if not USE_GPTPILOT_FOLDER:
             return
         if self.log_chat_completions:
-            time = datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
+            time = datetime.now().strftime("%Y-%m-%d_%H_%M_%S")
 
-            with open(os.path.join(self.chat_log_path, f'{time}-{req_type}.json'), 'w') as file:
+            with open(os.path.join(self.chat_log_path, f"{time}-{req_type}.json"), "w") as file:
                 data = {
-                    'endpoint': endpoint,
-                    'model': model,
-                    'functions': functions,
-                    'response': json.loads(json_response),
+                    "endpoint": endpoint,
+                    "model": model,
+                    "functions": functions,
+                    "response": json.loads(json_response),
                 }
 
                 json.dump(data, file, indent=2)
@@ -80,12 +82,12 @@ class DotGptPilot:
         if not USE_GPTPILOT_FOLDER:
             return
         data = {
-            'name': project.args['name'],
-            'description': project.project_description,
-            'user_stories': project.user_stories,
-            'architecture': project.architecture,
-            'development_plan': project.development_plan,
+            "name": project.args["name"],
+            "description": project.project_description,
+            "user_stories": project.user_stories,
+            "architecture": project.architecture,
+            "development_plan": project.development_plan,
         }
 
-        with open(os.path.join(self.dot_gpt_pilot_path, 'project.yaml'), 'w') as file:
+        with open(os.path.join(self.dot_gpt_pilot_path, "project.yaml"), "w") as file:
             yaml.safe_dump(data, file, width=120, indent=2, default_flow_style=False, sort_keys=False)

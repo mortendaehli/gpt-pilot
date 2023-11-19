@@ -5,7 +5,7 @@ Let's start with the{% endif %} step #{{ step_index }}:
 ```
 {{ step_description }}
 ```
-This step by step about what needs to be done to fulfill this step. 
+This step by step about what needs to be done to fulfill this step.
 {% if step_type == 'COMMAND' %}
 Respond with all commands that need to be run to fulfill this step. In case this is a complex step that can't be completed by only running commands (maybe it requires some code changes or user review), respond with an array with only one item `COMPLEX`. Like this - `[{"command": "COMPLEX", "timeout": 0}]`
 {% elif step_type == 'CODE_CHANGE' %}
@@ -16,4 +16,3 @@ First, you need to know the code that's currently written so that you can approp
 #}
 Respond with a list of files that you need to see before you can write the code for the current step. This list needs to be in a JSON array where each item is a file name. Do not respond with anything other than the mentioned JSON array.
 {% endif %}
- 

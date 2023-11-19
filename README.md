@@ -88,7 +88,7 @@ All generated code will be stored in the folder `workspace` inside the folder na
 
 ## 🐳 How to start gpt-pilot in docker?
 1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
-2. Update the `docker-compose.yml` environment variables, which can be done via `docker compose config` . if you use local model, please go to [https://localai.io/basics/getting_started/](https://localai.io/basics/getting_started/) start. 
+2. Update the `docker-compose.yml` environment variables, which can be done via `docker compose config` . if you use local model, please go to [https://localai.io/basics/getting_started/](https://localai.io/basics/getting_started/) start.
 3. By default, GPT Pilot will read & write to `~/gpt-pilot-workspace` on your machine, you can also edit this in `docker-compose.yml`
 4. run `docker compose build`. this will build a gpt-pilot container for you.
 5. run `docker compose up`.
@@ -139,7 +139,7 @@ See also [What's the purpose of arguments.password / User.password?](https://git
 
 
 ## `advanced`
-The Architect, by default, favors certain technologies, including: 
+The Architect, by default, favors certain technologies, including:
 
 - Node.JS
 - MongoDB
@@ -225,7 +225,7 @@ Here are a couple of example apps GPT Pilot created by itself:
 2. **The app needs to be written step by step as a developer would write it** - Let's say you want to create a simple app, know everything you need to code, and have the entire architecture in your head. Even then, you won't code it out entirely, then run it for the first time and debug all the issues simultaneously. Instead, you will implement something simple, like add routes, run it, see how it works, and then move on to the next task. This way, you can debug issues as they arise. The same should be the case when AI codes. It will make mistakes for sure, so in order for it to have an easier time debugging issues and for the developer to understand what is happening, the AI shouldn't just spit out the entire codebase at once. Instead, the app should be developed step by step just like a developer would code it - e.g. setup routes, add database connection, etc. <br><br>
 3. **The approach needs to be scalable** so that AI can create a production-ready app:
    1. **Context rewinding** - for solving each development task, the context size of the first message to the LLM has to be relatively the same. For example, the context size of the first LLM message while implementing development task #5 has to be more or less the same as the first message while developing task #50. Because of this, the conversation needs to be rewound to the first message upon each task. [See the diagram here](https://blogpythagora.files.wordpress.com/2023/08/pythagora-product-development-frame-3-1.jpg?w=1714).
-   2. **Recursive conversations** are LLM conversations set up to be used “recursively”. For example, if GPT Pilot detects an error, it needs to debug it, but let’s say that another error happens during the debugging process. Then, GPT Pilot needs to stop debugging the first issue, fix the second one, and get back to fixing the first issue. This is a very important concept that, I believe, needs to work to make AI build large and scalable apps by itself. It works by rewinding the context and explaining each error in the recursion separately. Once the deepest level error is fixed, we move up in the recursion and continue fixing that error. We do this until the entire recursion is completed. 
+   2. **Recursive conversations** are LLM conversations set up to be used “recursively”. For example, if GPT Pilot detects an error, it needs to debug it, but let’s say that another error happens during the debugging process. Then, GPT Pilot needs to stop debugging the first issue, fix the second one, and get back to fixing the first issue. This is a very important concept that, I believe, needs to work to make AI build large and scalable apps by itself. It works by rewinding the context and explaining each error in the recursion separately. Once the deepest level error is fixed, we move up in the recursion and continue fixing that error. We do this until the entire recursion is completed.
    3. **TDD (Test Driven Development)** - for GPT Pilot to be able to scale the codebase, it will need to be able to create new code without breaking previously written code. There is no better way to do this than working with TDD methodology. For each code that GPT Pilot writes, it needs to write tests that check if the code works as intended so that all previous tests can be run whenever new changes are made.
 
 The idea is that AI won't be able to (at least in the near future) create apps from scratch without the developer being involved. That's why we created an interactive tool that generates code but also requires the developer to check each step so that they can understand what's going on and so that the AI can have a better overview of the entire codebase.
@@ -267,9 +267,6 @@ Since this is a research project, there are many areas that need to be researche
 
 ## 🖥 Development
 Other than the research, GPT Pilot needs to be debugged to work in different scenarios. For example, we realized that the quality of the code generated is very sensitive to the size of the development task. When the task is too broad, the code has too many bugs that are hard to fix, but when the development task is too narrow, GPT also seems to struggle in getting the task implemented into the existing code.
-
-## 📊 Telemetry
-To improve GPT Pilot, we are tracking some events from which you can opt out at any time. You can read more about it [here](./docs/TELEMETRY.md).
 
 # 🔗 Connect with us
 🌟 As an open-source tool, it would mean the world to us if you starred the GPT-pilot repo 🌟

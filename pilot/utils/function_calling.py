@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Union, TypeVar, List, Dict, Literal, Optional, TypedDict, Callable
+from typing import Callable, Dict, List, Literal, Optional, TypedDict, TypeVar, Union
 
 JsonTypeBase = Union[str, int, float, bool, None, List["JsonType"], Dict[str, "JsonType"]]
 JsonType = TypeVar("JsonType", bound=JsonTypeBase)
@@ -38,22 +38,21 @@ def add_function_calls_to_request(gpt_data, function_calls: Union[FunctionCallSe
     if function_calls is None:
         return
 
-    model: str = gpt_data['model']
-    is_instruct = 'llama' in model or 'anthropic' in model
+    model: str = gpt_data["model"]
+    is_instruct = "llama" in model or "anthropic" in model
 
-    gpt_data['functions'] = function_calls['definitions']
+    gpt_data["functions"] = function_calls["definitions"]
 
     prompter = JsonPrompter(is_instruct)
 
-    if len(function_calls['definitions']) > 1:
+    if len(function_calls["definitions"]) > 1:
         function_call = None
     else:
-        function_call = function_calls['definitions'][0]['name']
+        function_call = function_calls["definitions"][0]["name"]
 
-    gpt_data['messages'].append({
-        'role': 'user',
-        'content': prompter.prompt('', function_calls['definitions'], function_call)
-    })
+    gpt_data["messages"].append(
+        {"role": "user", "content": prompter.prompt("", function_calls["definitions"], function_call)}
+    )
 
 
 def parse_agent_response(response, function_calls: Union[FunctionCallSet, None]):
@@ -67,22 +66,21 @@ def parse_agent_response(response, function_calls: Union[FunctionCallSet, None])
     Returns: The post-processed response.
     """
     if function_calls:
-        text = response['text']
+        text = response["text"]
         return json.loads(text)
 
-    return response['text']
+    return response["text"]
 
 
 class JsonPrompter:
     """
     Adapted from local_llm_function_calling
     """
+
     def __init__(self, is_instruct: bool = False):
         self.is_instruct = is_instruct
 
-    def function_descriptions(
-        self, functions: list[FunctionType], function_to_call: str
-    ) -> list[str]:
+    def function_descriptions(self, functions: list[FunctionType], function_to_call: str) -> list[str]:
         """Get the descriptions of the functions
 
         Args:
@@ -99,9 +97,7 @@ class JsonPrompter:
             if function["name"] == function_to_call and "description" in function
         ]
 
-    def function_parameters(
-        self, functions: list[FunctionType], function_to_call: str
-    ) -> str:
+    def function_parameters(self, functions: list[FunctionType], function_to_call: str) -> str:
         """Get the parameters of the function
 
         Args:
@@ -117,9 +113,7 @@ class JsonPrompter:
             if function["name"] == function_to_call
         )
 
-    def function_data(
-        self, functions: list[FunctionType], function_to_call: str
-    ) -> str:
+    def function_data(self, functions: list[FunctionType], function_to_call: str) -> str:
         """Get the data for the function
 
         Args:
@@ -148,9 +142,7 @@ class JsonPrompter:
         Returns:
             str: The summary of the function, as a bullet point
         """
-        return f"- {function['name']}" + (
-            f" - {function['description']}" if "description" in function else ""
-        )
+        return f"- {function['name']}" + (f" - {function['description']}" if "description" in function else "")
 
     def functions_summary(self, functions: list[FunctionType]) -> str:
         """Get a summary of the functions
@@ -161,9 +153,7 @@ class JsonPrompter:
         Returns:
             str: The summary of the functions, as a bulleted list
         """
-        return "Available functions:\n" + "\n".join(
-            self.function_summary(function) for function in functions
-        )
+        return "Available functions:\n" + "\n".join(self.function_summary(function) for function in functions)
 
     def prompt(
         self,
@@ -190,9 +180,7 @@ class JsonPrompter:
         ) + "\nThe response must contain ONLY the JSON object, with NO additional text or explanation."
 
         data = (
-            self.function_data(functions, function_to_call)
-            if function_to_call
-            else self.functions_summary(functions)
+            self.function_data(functions, function_to_call) if function_to_call else self.functions_summary(functions)
         )
 
         if self.is_instruct:

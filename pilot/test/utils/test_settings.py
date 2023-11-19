@@ -1,21 +1,15 @@
-from io import StringIO
 import json
-from os.path import expanduser, expandvars, join
+import sys
+from io import StringIO
 from os import getenv
+from os.path import expanduser, expandvars, join
 from pathlib import Path
 from subprocess import check_output
-import sys
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from utils.settings import (
-    Loader,
-    Settings,
-    get_git_commit,
-    get_package_version,
-    get_version,
-)
+from pilot.utils.settings import Loader, Settings, get_git_commit, get_package_version, get_version
 
 
 @pytest.fixture
@@ -66,7 +60,7 @@ def test_settings_to_dict():
 
 def test_loader_config_file_location(expected_config_location):
     settings = Settings()
-    Loader(settings).config_path == expected_config_location
+    assert Loader(settings).config_path == expected_config_location
 
 
 @patch("utils.settings.open")
@@ -133,9 +127,7 @@ def test_loader_load_from_env(mock_getenv):
 
 def test_get_git_commit():
     try:
-        expected_commit_hash = check_output(
-            ["git", "rev-parse", "HEAD"], encoding="ascii"
-        ).strip()
+        expected_commit_hash = check_output(["git", "rev-parse", "HEAD"], encoding="ascii").strip()
     except Exception:
         expected_commit_hash = None
 
@@ -148,10 +140,7 @@ def test_get_package_version():
 
 def test_get_version():
     try:
-        commit_suffix = (
-            "-git"
-            + check_output(["git", "rev-parse", "HEAD"], encoding="ascii").strip()[:7]
-        )
+        commit_suffix = "-git" + check_output(["git", "rev-parse", "HEAD"], encoding="ascii").strip()[:7]
     except Exception:
         commit_suffix = ""
 

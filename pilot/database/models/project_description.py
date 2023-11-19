@@ -1,5 +1,6 @@
 from peewee import TextField
-from database.models.components.progress_step import ProgressStep
+
+from pilot.database.models.components.progress_step import ProgressStep
 
 
 class ProjectDescription(ProgressStep):
@@ -7,4 +8,4 @@ class ProjectDescription(ProgressStep):
     summary = TextField()
 
     class Meta:
-        table_name = 'project_description'
+        table_name = "project_description"

@@ -1,5 +1,8 @@
-from colorama import Fore, Style as ColoramaStyle, init
 from enum import Enum
+
+from colorama import Fore
+from colorama import Style as ColoramaStyle
+from colorama import init
 from questionary import Style
 
 # Initialize colorama. Ensures that ANSI codes work on Windows systems.
@@ -10,9 +13,10 @@ class Theme(Enum):
     """
     Enum representing themes, which can be either DARK or LIGHT.
     """
-    DARK = 'dark'
-    LIGHT = 'light'
-    YELLOW = 'yellow'
+
+    DARK = "dark"
+    LIGHT = "light"
+    YELLOW = "yellow"
 
 
 class ColorName(Enum):
@@ -20,6 +24,7 @@ class ColorName(Enum):
     Enum representing color names and their corresponding ANSI color codes.
     Each color has a normal and a light version, indicated by the two elements in the tuple.
     """
+
     RED = (Fore.RED, Fore.LIGHTRED_EX)
     GREEN = (Fore.GREEN, Fore.LIGHTGREEN_EX)
     YELLOW = (Fore.YELLOW, Fore.LIGHTYELLOW_EX)
@@ -30,27 +35,33 @@ class ColorName(Enum):
 
 THEME_STYLES = {
     # Style configurations for DARK theme
-    Theme.DARK: Style.from_dict({
-        'question': '#FFFFFF bold',  # the color and style of the question - White
-        'answer': '#FF910A bold',  # the color and style of the answer - Dark Orange / Pumpkin
-        'pointer': '#FF4500 bold',  # the color and style of the pointer - Orange Red
-        'highlighted': '#63CD91 bold',  # the color and style of the highlighted option - Medium Aquamarine
-        'instruction': '#FFFF00 bold'  # the color and style of the instruction - Yellow
-    }),
+    Theme.DARK: Style.from_dict(
+        {
+            "question": "#FFFFFF bold",  # the color and style of the question - White
+            "answer": "#FF910A bold",  # the color and style of the answer - Dark Orange / Pumpkin
+            "pointer": "#FF4500 bold",  # the color and style of the pointer - Orange Red
+            "highlighted": "#63CD91 bold",  # the color and style of the highlighted option - Medium Aquamarine
+            "instruction": "#FFFF00 bold",  # the color and style of the instruction - Yellow
+        }
+    ),
     # Style configurations for LIGHT theme
-    Theme.LIGHT: Style.from_dict({
-        'question': '#000000 bold',  # the color and style of the question - Black
-        'answer': '#FFB74D bold',  # the color and style of the answer - Light Orange
-        'pointer': '#FF7043 bold',  # the color and style of the pointer - Light Red
-        'highlighted': '#AED581 bold',  # the color and style of the highlighted option - Light Green
-        'instruction': '#757575 bold'  # the color and style of the instruction - Grey
-    }),
+    Theme.LIGHT: Style.from_dict(
+        {
+            "question": "#000000 bold",  # the color and style of the question - Black
+            "answer": "#FFB74D bold",  # the color and style of the answer - Light Orange
+            "pointer": "#FF7043 bold",  # the color and style of the pointer - Light Red
+            "highlighted": "#AED581 bold",  # the color and style of the highlighted option - Light Green
+            "instruction": "#757575 bold",  # the color and style of the instruction - Grey
+        }
+    ),
     # Style configurations for LIGHT theme
-    Theme.YELLOW: Style.from_dict({
-        'question': '#FFFF00 bold',  # the color and style of the question - Black
-        'answer': '#FFB74D bold',  # the color and style of the answer - Light Orange
-        'pointer': '#FF7043 bold',  # the color and style of the pointer - Light Red
-    })
+    Theme.YELLOW: Style.from_dict(
+        {
+            "question": "#FFFF00 bold",  # the color and style of the question - Black
+            "answer": "#FFB74D bold",  # the color and style of the answer - Light Orange
+            "pointer": "#FF7043 bold",  # the color and style of the pointer - Light Red
+        }
+    ),
 }
 
 
@@ -149,7 +160,7 @@ def get_color_function(color_name: ColorName, bold: bool = False):
         """
         color = style_config.get_color(color_name)
         style = ColoramaStyle.BRIGHT if bold else ""
-        return f'{color}{style}{text}'
+        return f"{color}{style}{text}"
 
     return color_func
 

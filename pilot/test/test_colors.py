@@ -1,5 +1,6 @@
 import unittest
-from pilot.utils.style import style_config, Theme, ColorName, get_color_function
+
+from pilot.utils.style import ColorName, Theme, get_color_function, style_config
 
 
 class TestColorStyle(unittest.TestCase):
@@ -36,7 +37,8 @@ class TestColorStyle(unittest.TestCase):
 
                 color_func = get_color_function(color_name, bold=True)
                 print(
-                    f"[INFO] Testing color (bold): {color_name}, Expect: {code}\x1b[1mTest, Got: {color_func('Test')}")
+                    f"[INFO] Testing color (bold): {color_name}, Expect: {code}\x1b[1mTest, Got: {color_func('Test')}"
+                )
                 self.assertEqual(color_func("Test"), f"{code}\x1b[1mTest")
 
         # Test LIGHT theme
@@ -50,5 +52,6 @@ class TestColorStyle(unittest.TestCase):
 
                 color_func = get_color_function(color_name, bold=True)
                 print(
-                    f"[INFO] Testing color (bold): {color_name}, Expect: {code}\x1b[1mTest, Got: {color_func('Test')}")
+                    f"[INFO] Testing color (bold): {color_name}, Expect: {code}\x1b[1mTest, Got: {color_func('Test')}"
+                )
                 self.assertEqual(color_func("Test"), f"{code}\x1b[1mTest")

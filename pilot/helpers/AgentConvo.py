@@ -2,17 +2,17 @@ import json
 import re
 import subprocess
 import uuid
-from utils.style import color_yellow, color_yellow_bold
 
-from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
-from helpers.exceptions.TokenLimitError import TokenLimitError
-from utils.function_calling import parse_agent_response, FunctionCallSet
-from utils.llm_connection import create_gpt_chat_completion
-from utils.utils import get_prompt, get_sys_message, capitalize_first_word_with_underscores
-from logger.logger import logger
-from prompts.prompts import ask_user
-from const.llm import END_RESPONSE
-from helpers.cli import running_processes
+from pilot.const.llm import END_RESPONSE
+from pilot.database.database import delete_all_subsequent_steps, get_saved_development_step, save_development_step
+from pilot.helpers.cli import running_processes
+from pilot.helpers.exceptions.TokenLimitError import TokenLimitError
+from pilot.logger.logger import logger
+from pilot.prompts.prompts import ask_user
+from pilot.utils.function_calling import FunctionCallSet, parse_agent_response
+from pilot.utils.llm_connection import create_gpt_chat_completion
+from pilot.utils.style import color_yellow, color_yellow_bold
+from pilot.utils.utils import capitalize_first_word_with_underscores, get_prompt, get_sys_message
 
 
 class AgentConvo:
@@ -33,11 +33,14 @@ class AgentConvo:
 
         # add system message
         system_message = get_sys_message(self.agent.role, self.agent.project.args)
-        logger.info('\n>>>>>>>>>> System Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
-                    system_message['content'])
+        logger.info(
+            "\n>>>>>>>>>> System Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", system_message["content"]
+        )
         self.messages.append(system_message)
 
-    def send_message(self, prompt_path=None, prompt_data=None, function_calls: FunctionCallSet = None, should_log_message=True):
+    def send_message(
+        self, prompt_path=None, prompt_data=None, function_calls: FunctionCallSet = None, should_log_message=True
+    ):
         """
         Sends a message in the conversation.
 
@@ -54,24 +57,28 @@ class AgentConvo:
 
         # TODO: move this if block (and the other below) to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
         # check if we already have the LLM response saved
-        if self.agent.__class__.__name__ == 'Developer':
+        if self.agent.__class__.__name__ == "Developer":
             self.agent.project.llm_req_num += 1
         development_step = get_saved_development_step(self.agent.project)
         if development_step is not None and self.agent.project.skip_steps:
             # if we do, use it
-            print(color_yellow(f'Restoring development step with id {development_step.id}'))
-            self.agent.project.checkpoints['last_development_step'] = development_step
+            print(color_yellow(f"Restoring development step with id {development_step.id}"))
+            self.agent.project.checkpoints["last_development_step"] = development_step
             self.agent.project.restore_files(development_step.id)
             response = development_step.llm_response
             self.messages = development_step.messages
 
-            if self.agent.project.skip_until_dev_step and str(
-                    development_step.id) == self.agent.project.skip_until_dev_step:
+            if (
+                self.agent.project.skip_until_dev_step
+                and str(development_step.id) == self.agent.project.skip_until_dev_step
+            ):
                 self.agent.project.skip_steps = False
                 delete_all_subsequent_steps(self.agent.project)
 
-                if 'delete_unrelated_steps' in self.agent.project.args and self.agent.project.args[
-                    'delete_unrelated_steps']:
+                if (
+                    "delete_unrelated_steps" in self.agent.project.args
+                    and self.agent.project.args["delete_unrelated_steps"]
+                ):
                     self.agent.project.delete_all_steps_except_current_branch()
             else:
                 should_log_message = True
@@ -81,14 +88,15 @@ class AgentConvo:
         else:
             # if we don't, get the response from LLM
             try:
-                response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project,
-                                                      function_calls=function_calls)
+                response = create_gpt_chat_completion(
+                    self.messages, self.high_level_step, self.agent.project, function_calls=function_calls
+                )
             except TokenLimitError as e:
-                save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
+                save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, "", str(e))
                 raise e
 
             # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
-            if self.agent.__class__.__name__ == 'Developer':
+            if self.agent.__class__.__name__ == "Developer":
                 save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
 
         # TODO handle errors from OpenAI
@@ -103,8 +111,9 @@ class AgentConvo:
 
         # TODO we need to specify the response when there is a function called
         # TODO maybe we can have a specific function that creates the GPT response from the function call
-        logger.info('\n>>>>>>>>>> Assistant Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
-                    message_content)
+        logger.info(
+            "\n>>>>>>>>>> Assistant Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", message_content
+        )
         self.messages.append({"role": "assistant", "content": message_content})
         if should_log_message:
             self.log_message(message_content)
@@ -155,15 +164,17 @@ class AgentConvo:
 
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
-            user_message = ask_user(self.agent.project,
-                                    'Do you want to add anything else? If not, just press ENTER.',
-                                    hint=response,
-                                    require_some_input=False)
+            user_message = ask_user(
+                self.agent.project,
+                "Do you want to add anything else? If not, just press ENTER.",
+                hint=response,
+                require_some_input=False,
+            )
 
             if user_message == "":
                 accepted_messages.append(response)
 
-            logger.info('\n>>>>>>>>>> User Message >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', user_message)
+            logger.info("\n>>>>>>>>>> User Message >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", user_message)
             self.messages.append({"role": "user", "content": user_message})
             response = self.send_message(None, None, function_calls)
 
@@ -185,9 +196,9 @@ class AgentConvo:
     def replace_files(self):
         files = self.agent.project.get_all_coded_files()
         for msg in self.messages:
-            if msg['role'] == 'user':
+            if msg["role"] == "user":
                 for file in files:
-                    self.replace_file_content(msg['content'], file['path'], file['content'])
+                    self.replace_file_content(msg["content"], file["path"], file["content"])
 
     def escape_specials(self, s):
         s = s.replace("\\", "\\\\")
@@ -200,25 +211,25 @@ class AgentConvo:
             # todo check if needed '\\a',  # ASCII Bell (BEL)
             # todo check if needed '\\b',  # ASCII Backspace (BS) - note: different from regex \b
             # todo check if needed '\\f',  # ASCII Formfeed (FF)
-            '\\n',  # ASCII Linefeed (LF)
+            "\\n",  # ASCII Linefeed (LF)
             # todo check if needed '\\r',  # ASCII Carriage Return (CR)
-            '\\t',  # ASCII Horizontal Tab (TAB)
+            "\\t",  # ASCII Horizontal Tab (TAB)
             # todo check if needed '\\v'  # ASCII Vertical Tab (VT)
         ]
 
         for seq in sequences_to_preserve:
-            s = s.replace('\\\\' + seq[-1], seq)
+            s = s.replace("\\\\" + seq[-1], seq)
         return s
 
     def replace_file_content(self, message, file_path, new_content):
         escaped_file_path = re.escape(file_path)
 
-        pattern = rf'\*\*{{ {escaped_file_path} }}\*\*\n```\n(.*?)\n```'
+        pattern = rf"\*\*{{ {escaped_file_path} }}\*\*\n```\n(.*?)\n```"
 
         # Escape special characters in new_content for the sake of regex replacement
         new_content_escaped = self.escape_specials(new_content)
 
-        new_section_content = f'**{{ {file_path} }}**\n```\n{new_content_escaped}\n```'
+        new_section_content = f"**{{ {file_path} }}**\n```\n{new_content_escaped}\n```"
 
         updated_message, num_replacements = re.subn(pattern, new_section_content, message, flags=re.DOTALL)
 
@@ -228,7 +239,7 @@ class AgentConvo:
         return updated_message
 
     def convo_length(self):
-        return len([msg for msg in self.messages if msg['role'] != 'system'])
+        return len([msg for msg in self.messages if msg["role"] != "system"])
 
     def log_message(self, content):
         """
@@ -239,39 +250,42 @@ class AgentConvo:
         """
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
-            if self.agent.project.checkpoints['last_development_step'] is not None:
+            if self.agent.project.checkpoints["last_development_step"] is not None:
                 dev_step_msg = f'\nDev step {str(self.agent.project.checkpoints["last_development_step"])}\n'
-                print(color_yellow_bold(dev_step_msg), end='')
+                print(color_yellow_bold(dev_step_msg), end="")
                 logger.info(dev_step_msg)
-            print(f"\n{content}\n", type='local')
+            print(f"\n{content}\n", type="local")
         logger.info(f"{print_msg}: {content}\n")
 
     def to_context_prompt(self):
-        logger.info(f'to_context_prompt({self.agent.project.current_step})')
+        logger.info(f"to_context_prompt({self.agent.project.current_step})")
 
         # TODO: get dependencies & versions from the project (package.json, requirements.txt, pom.xml, etc.)
         # Ideally, the LLM could do this, and we update it on load & whenever the file changes
         # ...or LLM generates a script for `.gpt-pilot/get_dependencies` that we run
         # https://github.com/Pythagora-io/gpt-pilot/issues/189
-        return get_prompt('development/context.prompt', {
-            'directory_tree': self.agent.project.get_directory_tree(),
-            'running_processes': running_processes,
-        })
+        return get_prompt(
+            "development/context.prompt",
+            {
+                "directory_tree": self.agent.project.get_directory_tree(),
+                "running_processes": running_processes,
+            },
+        )
 
     def to_playground(self):
-        with open('const/convert_to_playground_convo.js', 'r', encoding='utf-8') as file:
+        with open("const/convert_to_playground_convo.js", "r", encoding="utf-8") as file:
             content = file.read()
-        process = subprocess.Popen('pbcopy', stdin=subprocess.PIPE)
-        process.communicate(content.replace('{{messages}}', str(self.messages)).encode('utf-8'))
+        process = subprocess.Popen("pbcopy", stdin=subprocess.PIPE)
+        process.communicate(content.replace("{{messages}}", str(self.messages)).encode("utf-8"))
 
     def remove_last_x_messages(self, x):
-        logger.info('removing last %d messages: %s', x, self.messages[-x:])
+        logger.info("removing last %d messages: %s", x, self.messages[-x:])
         self.messages = self.messages[:-x]
 
     def construct_and_add_message_from_prompt(self, prompt_path, prompt_data):
         if prompt_path is not None and prompt_data is not None:
             prompt = get_prompt(prompt_path, prompt_data)
-            logger.info('\n>>>>>>>>>> User Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', prompt)
+            logger.info("\n>>>>>>>>>> User Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", prompt)
             self.messages.append({"role": "user", "content": prompt})
 
     def get_additional_info_from_user(self, function_calls: FunctionCallSet = None):
@@ -286,15 +300,16 @@ class AgentConvo:
         """
         llm_response = None
         while True:
-            print(color_yellow(
-                "Please check this message and say what needs to be changed. If everything is ok just press ENTER", ))
-            changes = ask_user(self.agent.project, self.messages[-1]['content'], require_some_input=False)
-            if changes.lower() == '':
+            print(
+                color_yellow(
+                    "Please check this message and say what needs to be changed. If everything is ok just press ENTER",
+                )
+            )
+            changes = ask_user(self.agent.project, self.messages[-1]["content"], require_some_input=False)
+            if changes.lower() == "":
                 break
 
-            llm_response = self.send_message('utils/update.prompt',
-                                             {'changes': changes},
-                                             function_calls)
+            llm_response = self.send_message("utils/update.prompt", {"changes": changes}, function_calls)
 
-        logger.info('Getting additional info from user done')
+        logger.info("Getting additional info from user done")
         return llm_response
